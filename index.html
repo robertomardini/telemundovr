@@ -2,13 +2,14 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Panel 3D – Stream Vivo</title>
-    <meta name="description" content="Estadio VR con controles in-scene y vídeo en vivo" />
+    <title>Estadio VR con Stream Telemundo en Vivo</title>
+    <meta name="description" content="Estadio VR con controles y transmisión Telemundo LA en vivo" />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
+      /* Ocultar el <video> sin usar display:none */
       #videoLive {
         position: absolute;
         width: 1px;
@@ -16,6 +17,7 @@
         opacity: 0;
         pointer-events: none;
       }
+      /* Botones VR/fullscreen centrados abajo */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
@@ -33,7 +35,7 @@
     </style>
   </head>
   <body>
-    <!-- Vídeo oculto (fuente de textura y audio) -->
+    <!-- Vídeo oculto (textura + audio) -->
     <video
       id="videoLive"
       autoplay
@@ -102,14 +104,13 @@
     </a-scene>
 
     <script>
-      // --- STREAM EN VIVO (HLS) ---
+      // --- STREAM TELEMUNDO LA (HLS en vivo) ---
       var video = document.getElementById('videoLive');
-      // Este es un stream de prueba en vivo de Mux (noticias)
-      var src = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+      var videoSrc = 'https://nbculocallive.akamaized.net/hls/live/2037084/losangeles/stream6/master.m3u8';
 
       if (Hls.isSupported()) {
         var hls = new Hls();
-        hls.loadSource(src);
+        hls.loadSource(videoSrc);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
           video.muted = false;
@@ -117,7 +118,7 @@
           video.play();
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = src;
+        video.src = videoSrc;
         video.muted = false;
         video.volume = 1.0;
         video.addEventListener('loadedmetadata', function () {
