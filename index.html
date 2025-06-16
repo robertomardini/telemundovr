@@ -2,214 +2,93 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Controles y Vídeo 2D Tras VR</title>
-    <meta
-      name="description"
-      content="Estadio VR con HLS en vivo, panel 3D de controles y vídeo visible en la web tras salir de VR"
-    />
-    <!-- A-Frame -->
+    <title>VR Stadium – Gradas y Pantalla Curva</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- HLS.js -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* Vídeo 2D al salir de VR */
-      #videoLive {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: auto;
-        z-index: 1000;
-      }
-      /* Ocultar vídeo mientras se esté en VR */
-      #videoLive.hidden {
-        display: none;
-      }
-      /* Botones VR/fullscreen centrados abajo */
-      .a-enter-vr-button,
-      .a-fullscreen-button {
-        position: fixed !important;
-        bottom: env(safe-area-inset-bottom, 20px) !important;
-        width: 40px !important;
-        height: 40px !important;
-        z-index: 9999 !important;
-      }
-      .a-enter-vr-button {
-        left: calc(50% - 30px) !important;
-      }
-      .a-fullscreen-button {
-        left: calc(50% + 10px) !important;
-      }
+      body { margin: 0; overflow: hidden; }
     </style>
   </head>
   <body>
-    <!-- Vídeo oculto en 2D mientras esté en VR -->
-    <video
-      id="videoLive"
-      class="hidden"
-      autoplay
-      playsinline
-      webkit-playsinline
-      crossorigin="anonymous"
-    ></video>
-
-    <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Rig con cámara y controllers a 1.6 m -->
-      <a-entity id="rig" position="0 1.6 0">
-        <a-camera wasd-controls-enabled="false"></a-camera>
-        <a-entity
-          laser-controls="hand: left"
-          raycaster="objects: .interactive"
-        ></a-entity>
-        <a-entity
-          laser-controls="hand: right"
-          raycaster="objects: .interactive"
-        ></a-entity>
+    <a-scene embedded vr-mode-ui="enabled: true">
+      <!-- Cámara / posición de espectador -->
+      <a-entity position="0 1.6 0">
+        <a-camera wasd-controls="enabled: false"></a-camera>
       </a-entity>
 
-      <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
+      <!-- Suelo plano bajo las gradas -->
+      <a-plane rotation="-90 0 0" width="100" height="100" color="#222"></a-plane>
 
-      <!-- Pantalla de vídeo VR -->
-      <a-video src="#videoLive" width="24" height="13.5" position="0 5 -20"></a-video>
-
-      <!-- Gradas -->
+      <!-- Gradas: cilindro segmentado de 90° -->
       <a-cylinder
-        position="0 5 -20"
-        radius="40"
-        height="10"
-        color="#444"
-        side="double"
-        segments-radial="64"
+        position="0 2 -5"
+        rotation="0 180 0"
+        radius="8"
+        height="4"
         open-ended="true"
-        theta-length="180"
+        side="double"
+        theta-length="90"
+        material="color: #555; opacity: 0.9"
       ></a-cylinder>
 
-      <!-- Panel de controles + Salir -->
-      <a-entity position="0 1.5 -2">
-        <a-plane width="2.4" height="0.4" color="#222" material="opacity:0.8"></a-plane>
-        <a-entity
-          id="btnPlay"
-          class="interactive"
-          geometry="primitive: plane; width: 0.4; height: 0.2"
-          material="color: #0A74DA"
-          text="value: Play; align: center; width: 1.5; color: #FFF"
-          position="-1.0 0 0.01"
-        ></a-entity>
-        <a-entity
-          id="btnVolDown"
-          class="interactive"
-          geometry="primitive: plane; width: 0.2; height: 0.2"
-          material="color: #555"
-          text="value: -; align: center; width: 0.5; color: #FFF"
-          position="-0.4 0 0.01"
-        ></a-entity>
-        <a-entity
-          id="volText"
-          text="value: Vol: 100%; align: center; width: 1.2; color: #FFF"
-          position="0.4 0 0.01"
-        ></a-entity>
-        <a-entity
-          id="btnVolUp"
-          class="interactive"
-          geometry="primitive: plane; width: 0.2; height: 0.2"
-          material="color: #555"
-          text="value: +; align: center; width: 0.5; color: #FFF"
-          position="0.8 0 0.01"
-        ></a-entity>
-        <a-entity
-          id="btnExit"
-          class="interactive"
-          geometry="primitive: plane; width: 0.3; height: 0.2"
-          material="color: #DA0A0A; opacity: 0.8"
-          text="value: Salir; align: center; width: 1; color: #FFF"
-          position="1.3 0 0.01"
-        ></a-entity>
+      <!-- Asientos: varios pequeños cubos en filas -->
+      <a-entity id="asientos">
+        <!-- Generamos 5 filas, 10 asientos por fila -->
+        <a-entity position="0 0 -5">
+          <a-entity
+            id="fila0" position="0 0.5 0"
+            template="row:0"
+          ></a-entity>
+        </a-entity>
       </a-entity>
 
-      <!-- Iluminación -->
-      <a-light type="ambient" intensity="1"></a-light>
-      <a-light type="directional" intensity="0.5" position="0 10 0"></a-light>
+      <!-- Pantalla curva: segmento de cilindro enfrentado al espectador -->
+      <a-cylinder
+        position="0 3 -10"
+        rotation="0 180 0"
+        radius="10"
+        height="6"
+        open-ended="true"
+        theta-length="90"
+        material="shader: flat; src: #videoTexture"
+      ></a-cylinder>
+
+      <!-- Fuente de video (oculta) -->
+      <video id="videoLive" autoplay loop crossorigin="anonymous" src="https://live-hls-web-aje.getaj.net/AJE/index.m3u8"></video>
+      <a-assets>
+        <video id="videoTexture" src="#videoLive"></video>
+      </a-assets>
+
+      <!-- Luces -->
+      <a-light type="ambient" intensity="0.6"></a-light>
+      <a-light type="directional" intensity="0.8" position="0 10 -5"></a-light>
     </a-scene>
 
     <script>
-      // --- STREAM EN VIVO HLS (Al Jazeera 24/7) ---
-      var video = document.getElementById('videoLive');
-      var videoSrc = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8';
+      // Script para generar asientos en filas
+      const filas = 5, asientosPorFila = 10;
+      const separacionX = 1.5, separacionZ = 0.8;
+      const entidadAsientos = document.querySelector('#asientos');
 
-      if (Hls.isSupported()) {
-        var hls = new Hls();
-        hls.loadSource(videoSrc);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          video.muted = false;
-          video.volume = 1.0;
-          video.play();
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = videoSrc;
-        video.muted = false;
-        video.volume = 1.0;
-        video.addEventListener('loadedmetadata', function () {
-          video.play();
-        });
-      }
-
-      // --- CONTROLES 3D ---
-      var btnPlay = document.getElementById('btnPlay');
-      var btnVolUp = document.getElementById('btnVolUp');
-      var btnVolDown = document.getElementById('btnVolDown');
-      var volText = document.getElementById('volText');
-      var btnExit = document.getElementById('btnExit');
-
-      function updateVolText() {
-        volText.setAttribute(
-          'text',
-          'value',
-          'Vol: ' + Math.round(video.volume * 100) + '%'
-        );
-      }
-
-      btnPlay.addEventListener('click', function () {
-        if (video.paused) {
-          video.play();
-          this.setAttribute('text', 'value', 'Pause');
-        } else {
-          video.pause();
-          this.setAttribute('text', 'value', 'Play');
+      for (let fila = 0; fila < filas; fila++) {
+        for (let i = 0; i < asientosPorFila; i++) {
+          const seat = document.createElement('a-box');
+          seat.setAttribute('depth', '0.5');
+          seat.setAttribute('width', '0.5');
+          seat.setAttribute('height', '0.3');
+          seat.setAttribute('material', 'color:#333');
+          // posicionamos cada asiento en semicírculo
+          const angle = -45 + (90 / (asientosPorFila - 1)) * i;
+          const rad = THREE.Math.degToRad(angle);
+          const x = Math.sin(rad) * (8 + 0.4);      // radio + offset
+          const z = -5 + Math.cos(rad) * (8 + 0.4);
+          // elevamos según la fila
+          const y = 0.3 + fila * 0.4;
+          seat.setAttribute('position', `${x} ${y} ${z}`);
+          entidadAsientos.appendChild(seat);
         }
-      });
-
-      btnVolUp.addEventListener('click', function () {
-        video.volume = Math.min(1, video.volume + 0.1);
-        updateVolText();
-      });
-
-      btnVolDown.addEventListener('click', function () {
-        video.volume = Math.max(0, video.volume - 0.1);
-        updateVolText();
-      });
-
-      // --- MOSTRAR/OCULTAR VÍDEO 2D AL ENTRAR/SALIR DE VR ---
-      var sceneEl = document.querySelector('a-scene');
-
-      sceneEl.addEventListener('enter-vr', function () {
-        video.classList.add('hidden');
-        video.controls = false;
-      });
-
-      sceneEl.addEventListener('exit-vr', function () {
-        video.classList.remove('hidden');
-        video.controls = true;
-      });
-
-      // --- BOTÓN SALIR VR IN-LOOP ---
-      btnExit.addEventListener('click', function () {
-        var scene = document.querySelector('a-scene');
-        if (scene.exitVR) {
-          scene.exitVR();
-        }
-      });
+      }
     </script>
+    <!-- A-Frame depende de THREE, expuesto en window -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   </body>
 </html>
