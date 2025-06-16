@@ -2,8 +2,11 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Stream en Vivo y Botón de Salida</title>
-    <meta name="description" content="Estadio VR con transmisión HLS, panel 3D de controles y botón de salida VR" />
+    <title>Estadio VR con Stream Vivo y Controles In-Scene</title>
+    <meta
+      name="description"
+      content="Estadio VR con transmisión HLS, panel 3D de controles y botón de salida dentro del VR"
+    />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js -->
@@ -17,22 +20,7 @@
         opacity: 0;
         pointer-events: none;
       }
-      /* Botón X para salir de VR */
-      #btnExitVR {
-        position: fixed;
-        top: env(safe-area-inset-top, 20px);
-        right: env(safe-area-inset-right, 20px);
-        z-index: 10000;
-        width: 36px;
-        height: 36px;
-        background: rgba(0, 0, 0, 0.6);
-        color: #fff;
-        border: none;
-        border-radius: 18px;
-        font-size: 18px;
-        cursor: pointer;
-      }
-      /* Botones VR/fullscreen centrados abajo */
+      /* Ajustes para los botones VR/fullscreen centrados abajo */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
@@ -60,27 +48,25 @@
       crossorigin="anonymous"
     ></video>
 
-    <!-- Botón X para salir de la vista VR -->
-    <button id="btnExitVR">X</button>
-
     <a-scene vr-mode-ui="enabled: true" embedded>
       <!-- Rig con cámara y controllers a 1.6m -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera wasd-controls-enabled="false"></a-camera>
-        <a-entity laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
-        <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
+        <a-entity
+          laser-controls="hand: left"
+          raycaster="objects: .interactive"
+        ></a-entity>
+        <a-entity
+          laser-controls="hand: right"
+          raycaster="objects: .interactive"
+        ></a-entity>
       </a-entity>
 
       <!-- Suelo -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
 
       <!-- Pantalla de vídeo (más grande y más lejos) -->
-      <a-video
-        src="#videoLive"
-        width="24"
-        height="13.5"
-        position="0 5 -20"
-      ></a-video>
+      <a-video src="#videoLive" width="24" height="13.5" position="0 5 -20"></a-video>
 
       <!-- Gradas -->
       <a-cylinder
@@ -128,6 +114,17 @@
         ></a-entity>
       </a-entity>
 
+      <!-- Botón de salida VR dentro del mundo -->
+      <a-entity
+        id="btnExit"
+        class="interactive"
+        geometry="primitive: plane; width: 0.3; height: 0.3"
+        material="color: #DA0A0A; opacity: 0.8"
+        text="value: X; align: center; width: 1; color: #FFF"
+        position="1.2 3 -3"
+      ></a-entity>
+
+      <!-- Iluminación -->
       <a-light type="ambient" intensity="1"></a-light>
       <a-light type="directional" intensity="0.5" position="0 10 0"></a-light>
     </a-scene>
@@ -160,6 +157,7 @@
       var btnVolUp   = document.getElementById('btnVolUp');
       var btnVolDown = document.getElementById('btnVolDown');
       var volText    = document.getElementById('volText');
+      var btnExit    = document.getElementById('btnExit');
 
       function updateVolText() {
         volText.setAttribute('text', 'value', 'Vol: ' + Math.round(video.volume * 100) + '%');
@@ -185,8 +183,7 @@
         updateVolText();
       });
 
-      // --- BOTÓN SALIR VR ---
-      var btnExit = document.getElementById('btnExitVR');
+      // --- BOTÓN SALIR VR IN-LOOP ---
       btnExit.addEventListener('click', function () {
         var sceneEl = document.querySelector('a-scene');
         if (sceneEl.exitVR) {
