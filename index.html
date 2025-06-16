@@ -2,14 +2,14 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con A-Frame y HLS (HTTPS)</title>
-    <meta name="description" content="Estadio VR con transmisión en vivo HLS vía HTTPS con audio" />
+    <title>Estadio VR con A-Frame y HLS (Audio In-Scene)</title>
+    <meta name="description" content="Estadio VR con control de audio dentro de la escena" />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- HLS.js para reproducir .m3u8 en navegadores -->
+    <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* Ocultar el <video> sin usar display:none */
+      /* Ocultar el video sin usar display:none */
       #videoLive {
         position: absolute;
         width: 1px;
@@ -17,43 +17,10 @@
         opacity: 0;
         pointer-events: none;
       }
-
-      /* Botón de audio */
-      #audioBtn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 10000;
-        padding: 10px 15px;
-        background: rgba(0,0,0,0.6);
-        color: #fff;
-        border: none;
-        border-radius: 4px;
-        font-size: 14px;
-        cursor: pointer;
-      }
-
-      /* Posicionar los botones VR y fullscreen centrados abajo */
-      .a-enter-vr-button,
-      .a-fullscreen-button {
-        position: fixed !important;
-        bottom: env(safe-area-inset-bottom, 20px) !important;
-        width: 40px !important;
-        height: 40px !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        z-index: 9999 !important;
-      }
-      .a-enter-vr-button {
-        left: calc(50% - 30px) !important;
-      }
-      .a-fullscreen-button {
-        left: calc(50% + 10px) !important;
-      }
     </style>
   </head>
   <body>
-    <!-- Elemento de video (fuente de textura y audio) -->
+    <!-- Fuente de vídeo y audio -->
     <video
       id="videoLive"
       autoplay
@@ -62,21 +29,35 @@
       crossorigin="anonymous"
     ></video>
 
-    <!-- Botón para activar audio -->
-    <button id="audioBtn">Activar audio</button>
-
-    <!-- Escena A-Frame -->
     <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Cámara VR -->
+      <!-- Cámara + cursor -->
       <a-entity position="0 1.6 0">
-        <a-camera look-controls wasd-controls-enabled="false"></a-camera>
+        <a-camera look-controls wasd-controls-enabled="false">
+          <!-- Cursor para ratón y VR controllers -->
+          <a-entity
+            cursor="rayOrigin: mouse"
+            raycaster="objects: .interactive"
+            position="0 0 -0.5"
+          >
+            <a-ring
+              color="#FFF"
+              radius-inner="0.005"
+              radius-outer="0.01"
+            ></a-ring>
+          </a-entity>
+        </a-camera>
       </a-entity>
 
       <!-- Suelo -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
 
-      <!-- Pantalla de video -->
-      <a-video src="#videoLive" width="16" height="9" position="0 4 -15"></a-video>
+      <!-- Pantalla de vídeo -->
+      <a-video
+        src="#videoLive"
+        width="16"
+        height="9"
+        position="0 4 -15"
+      ></a-video>
 
       <!-- Gradas -->
       <a-cylinder
@@ -90,40 +71,54 @@
         theta-length="180"
       ></a-cylinder>
 
-      <!-- Luces -->
+      <!-- Botón virtual de audio -->
+      <a-entity
+        id="audioControl"
+        class="interactive"
+        geometry="primitive: plane; width: 1; height: 0.3"
+        material="color: #000; opacity: 0.7"
+        text="value: Audio: On; align: center; width: 1.5; color: #FFF"
+        position="0 2 -2"
+      ></a-entity>
+
+      <!-- Iluminación -->
       <a-light type="ambient" intensity="1"></a-light>
       <a-light type="directional" intensity="0.5" position="0 10 0"></a-light>
     </a-scene>
 
-    <!-- Script para cargar HLS y controlar audio -->
     <script>
+      // 1) Cargar HLS
       var video = document.getElementById('videoLive');
-      var btn   = document.getElementById('audioBtn');
-      var src   = 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
+      var src = 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
 
-      // Cargar stream HLS
       if (Hls.isSupported()) {
         var hls = new Hls();
         hls.loadSource(src);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          // al cargar, dejamos el audio desactivado inicialmente
+          video.muted = true;
           video.play();
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = src;
-        video.addEventListener('loadedmetadata', function () {
-          video.play();
-        });
+        video.muted = true;
+        video.addEventListener('loadedmetadata', () => video.play());
       }
 
-      // Al hacer clic en “Activar audio”
-      btn.addEventListener('click', function () {
-        // Desmutear y subir volumen
-        video.muted = false;
-        video.volume = 1.0;
-        video.play();
-        // Ocultar el botón
-        btn.style.display = 'none';
+      // 2) Control de audio dentro de la escena
+      var audioBtnEnt = document.getElementById('audioControl');
+      var audioOn = false;
+
+      audioBtnEnt.addEventListener('click', function () {
+        audioOn = !audioOn;
+        video.muted = !audioOn;
+        // Actualiza el texto del botón
+        this.setAttribute(
+          'text',
+          'value',
+          audioOn ? 'Audio: On' : 'Audio: Off'
+        );
       });
     </script>
   </body>
