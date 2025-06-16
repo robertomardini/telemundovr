@@ -2,8 +2,8 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Stream Telemundo en Vivo</title>
-    <meta name="description" content="Estadio VR con controles y transmisión Telemundo LA en vivo" />
+    <title>Estadio VR con Stream en Vivo y Botón de Salida</title>
+    <meta name="description" content="Estadio VR con transmisión HLS, panel 3D de controles y botón de salida VR" />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js -->
@@ -16,6 +16,21 @@
         height: 1px;
         opacity: 0;
         pointer-events: none;
+      }
+      /* Botón X para salir de VR */
+      #btnExitVR {
+        position: fixed;
+        top: env(safe-area-inset-top, 20px);
+        right: env(safe-area-inset-right, 20px);
+        z-index: 10000;
+        width: 36px;
+        height: 36px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        border: none;
+        border-radius: 18px;
+        font-size: 18px;
+        cursor: pointer;
       }
       /* Botones VR/fullscreen centrados abajo */
       .a-enter-vr-button,
@@ -45,18 +60,32 @@
       crossorigin="anonymous"
     ></video>
 
+    <!-- Botón X para salir de la vista VR -->
+    <button id="btnExitVR">X</button>
+
     <a-scene vr-mode-ui="enabled: true" embedded>
+      <!-- Rig con cámara y controllers a 1.6m -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera wasd-controls-enabled="false"></a-camera>
         <a-entity laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
         <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
       </a-entity>
 
+      <!-- Suelo -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
-      <a-video src="#videoLive" width="16" height="9" position="0 4 -15"></a-video>
+
+      <!-- Pantalla de vídeo (más grande y más lejos) -->
+      <a-video
+        src="#videoLive"
+        width="24"
+        height="13.5"
+        position="0 5 -20"
+      ></a-video>
+
+      <!-- Gradas -->
       <a-cylinder
-        position="0 5 -15"
-        radius="30"
+        position="0 5 -20"
+        radius="40"
         height="10"
         color="#444"
         side="double"
@@ -104,7 +133,7 @@
     </a-scene>
 
     <script>
-      // --- STREAM TELEMUNDO LA (HLS en vivo) ---
+      // --- STREAM EN VIVO HLS (Al Jazeera 24/7) ---
       var video = document.getElementById('videoLive');
       var videoSrc = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8';
 
@@ -154,6 +183,15 @@
       btnVolDown.addEventListener('click', function () {
         video.volume = Math.max(0, video.volume - 0.1);
         updateVolText();
+      });
+
+      // --- BOTÓN SALIR VR ---
+      var btnExit = document.getElementById('btnExitVR');
+      btnExit.addEventListener('click', function () {
+        var sceneEl = document.querySelector('a-scene');
+        if (sceneEl.exitVR) {
+          sceneEl.exitVR();
+        }
       });
     </script>
   </body>
