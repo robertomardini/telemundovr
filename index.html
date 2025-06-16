@@ -18,32 +18,25 @@
         pointer-events: none;
       }
 
-      /* 2) Ajustes para los botones de A-Frame VR y pantalla completa */
+      /* 2) Posicionar los botones en el centro-abajo */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
-        /* Zona segura o margen de 10px */
-        top: env(safe-area-inset-top, 10px) !important;
-        left: env(safe-area-inset-left, 10px) !important;
-        /* Tamaño reducido y uniforme */
+        bottom: env(safe-area-inset-bottom, 20px) !important;
         width: 40px !important;
         height: 40px !important;
-        min-width: 40px !important;
-        min-height: 40px !important;
         padding: 0 !important;
         margin: 0 !important;
-        font-size: 12px !important;
-        line-height: 40px !important;
-        border-radius: 4px !important;
         z-index: 9999 !important;
       }
-      /* Separar el botón de pantalla completa hacia la derecha */
+      .a-enter-vr-button {
+        left: calc(50% - 30px) !important; /* 40px ancho + 20px separación */
+      }
       .a-fullscreen-button {
-        left: calc(env(safe-area-inset-left, 10px) + 50px) !important;
+        left: calc(50% + 10px) !important;
       }
     </style>
   </head>
-
   <body>
     <!-- Elemento de video oculto: será la fuente de la pantalla en A-Frame -->
     <video
