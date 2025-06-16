@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <title>Estadio VR con A-Frame y HLS (HTTPS)</title>
-    <meta name="description" content="Estadio VR con transmisión en vivo HLS via HTTPS" />
+    <meta name="description" content="Estadio VR con transmisión en vivo HLS vía HTTPS" />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js para reproducir .m3u8 en navegadores -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* Ocultar el video sin usar display:none */
+      /* 1) Ocultar el <video> sin usar display:none */
       #videoLive {
         position: absolute;
         width: 1px;
@@ -18,16 +18,32 @@
         pointer-events: none;
       }
 
-      /* Mover el botón "Enter VR" a un área segura */
-      .a-enter-vr-button {
+      /* 2) Ajustes para los botones de A-Frame VR y pantalla completa */
+      .a-enter-vr-button,
+      .a-fullscreen-button {
         position: fixed !important;
-        /* 20px de margen, o usa la zona segura en iOS */
-        top: env(safe-area-inset-top, 20px) !important;
-        left: env(safe-area-inset-left, 20px) !important;
+        /* Zona segura o margen de 10px */
+        top: env(safe-area-inset-top, 10px) !important;
+        left: env(safe-area-inset-left, 10px) !important;
+        /* Tamaño reducido y uniforme */
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 12px !important;
+        line-height: 40px !important;
+        border-radius: 4px !important;
         z-index: 9999 !important;
+      }
+      /* Separar el botón de pantalla completa hacia la derecha */
+      .a-fullscreen-button {
+        left: calc(env(safe-area-inset-left, 10px) + 50px) !important;
       }
     </style>
   </head>
+
   <body>
     <!-- Elemento de video oculto: será la fuente de la pantalla en A-Frame -->
     <video
@@ -47,20 +63,10 @@
       </a-entity>
 
       <!-- Suelo del estadio -->
-      <a-plane
-        rotation="-90 0 0"
-        width="100"
-        height="100"
-        color="#2e2e2e"
-      ></a-plane>
+      <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
 
       <!-- Pantalla de video en vivo -->
-      <a-video
-        src="#videoLive"
-        width="16"
-        height="9"
-        position="0 4 -15"
-      ></a-video>
+      <a-video src="#videoLive" width="16" height="9" position="0 4 -15"></a-video>
 
       <!-- Gradas del estadio (medio cilindro) -->
       <a-cylinder
@@ -76,17 +82,13 @@
 
       <!-- Iluminación -->
       <a-light type="ambient" intensity="1"></a-light>
-      <a-light
-        type="directional"
-        intensity="0.5"
-        position="0 10 0"
-      ></a-light>
+      <a-light type="directional" intensity="0.5" position="0 10 0"></a-light>
     </a-scene>
 
     <!-- Script para cargar el stream HLS vía HTTPS -->
     <script>
       var video = document.getElementById('videoLive');
-      // Stream HLS seguro por HTTPS
+      // Stream HLS seguro por HTTPS (tráiler “Sintel” de Bitmovin)
       var videoSrc =
         'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
 
