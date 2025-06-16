@@ -2,14 +2,14 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con A-Frame y HLS (Audio In-Scene)</title>
-    <meta name="description" content="Estadio VR con control de audio dentro de la escena" />
+    <title>Estadio VR A-Frame + Meta Quest Controls</title>
+    <meta name="description" content="Estadio VR con control de audio in-scene y soporte para Meta Quest" />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* Ocultar el video sin usar display:none */
+      /* Ocultar el <video> sin usar display:none */
       #videoLive {
         position: absolute;
         width: 1px;
@@ -30,10 +30,9 @@
     ></video>
 
     <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Cámara + cursor -->
+      <!-- Cámara + cursor para escritorio -->
       <a-entity position="0 1.6 0">
         <a-camera look-controls wasd-controls-enabled="false">
-          <!-- Cursor para ratón y VR controllers -->
           <a-entity
             cursor="rayOrigin: mouse"
             raycaster="objects: .interactive"
@@ -48,8 +47,20 @@
         </a-camera>
       </a-entity>
 
+      <!-- Controllers Meta Quest -->
+      <a-entity
+        laser-controls="hand: right"
+        raycaster="objects: .interactive"
+      ></a-entity>
+      <a-entity laser-controls="hand: left"></a-entity>
+
       <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
+      <a-plane
+        rotation="-90 0 0"
+        width="100"
+        height="100"
+        color="#2e2e2e"
+      ></a-plane>
 
       <!-- Pantalla de vídeo -->
       <a-video
@@ -81,13 +92,13 @@
         position="0 2 -2"
       ></a-entity>
 
-      <!-- Iluminación -->
+      <!-- Luces -->
       <a-light type="ambient" intensity="1"></a-light>
       <a-light type="directional" intensity="0.5" position="0 10 0"></a-light>
     </a-scene>
 
     <script>
-      // 1) Cargar HLS
+      // --- Carga HLS ---
       var video = document.getElementById('videoLive');
       var src = 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
 
@@ -96,7 +107,6 @@
         hls.loadSource(src);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          // al cargar, dejamos el audio desactivado inicialmente
           video.muted = true;
           video.play();
         });
@@ -106,20 +116,23 @@
         video.addEventListener('loadedmetadata', () => video.play());
       }
 
-      // 2) Control de audio dentro de la escena
+      // --- Control de audio in-scene ---
       var audioBtnEnt = document.getElementById('audioControl');
-      var audioOn = false;
+      var audioOn = true; // comienza con audio on
+      audioBtnEnt.setAttribute('text', 'value', 'Audio: On');
 
       audioBtnEnt.addEventListener('click', function () {
         audioOn = !audioOn;
         video.muted = !audioOn;
-        // Actualiza el texto del botón
         this.setAttribute(
           'text',
           'value',
           audioOn ? 'Audio: On' : 'Audio: Off'
         );
       });
+
+      // Para que los controladores lancen el evento click en boil
+      AFRAME.registerComponent('interactive', {});
     </script>
   </body>
 </html>
