@@ -2,10 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Pantalla Curva</title>
+    <title>Estadio VR con Modelo 3D</title>
     <meta
       name="description"
-      content="Estadio VR con HLS en vivo, panel 3D de controles y pantalla curva dentro del mundo VR"
+      content="Estadio VR con HLS en vivo, panel 3D de controles, vídeo 2D tras VR y modelo glTF de estadio"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -54,6 +54,14 @@
     ></video>
 
     <a-scene vr-mode-ui="enabled: true" embedded>
+      <!-- Definición de assets: modelo glTF -->
+      <a-assets>
+        <a-asset-item
+          id="stadiumModel"
+          src="soccer_stadium/scene.gltf"
+        ></a-asset-item>
+      </a-assets>
+
       <!-- Rig con cámara y controllers a 1.6 m -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera wasd-controls-enabled="false"></a-camera>
@@ -68,19 +76,20 @@
       </a-entity>
 
       <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
+      <a-plane
+        rotation="-90 0 0"
+        width="100"
+        height="100"
+        color="#2e2e2e"
+      ></a-plane>
 
-      <!-- Gradas semicirculares -->
-      <a-cylinder
-        position="0 5 -20"
-        radius="40"
-        height="10"
-        color="#444"
-        side="double"
-        segments-radial="64"
-        open-ended="true"
-        theta-length="180"
-      ></a-cylinder>
+      <!-- Modelo 3D del estadio -->
+      <a-entity
+        gltf-model="#stadiumModel"
+        position="0 0 -15"
+        rotation="0 180 0"
+        scale="2 2 2"
+      ></a-entity>
 
       <!-- Pantalla curva de vídeo -->
       <a-cylinder
@@ -96,7 +105,12 @@
 
       <!-- Panel de controles + Salir -->
       <a-entity position="0 1.5 -2">
-        <a-plane width="2.4" height="0.4" color="#222" material="opacity:0.8"></a-plane>
+        <a-plane
+          width="2.4"
+          height="0.4"
+          color="#222"
+          material="opacity:0.8"
+        ></a-plane>
         <a-entity
           id="btnPlay"
           class="interactive"
@@ -138,13 +152,18 @@
 
       <!-- Iluminación -->
       <a-light type="ambient" intensity="1"></a-light>
-      <a-light type="directional" intensity="0.5" position="0 10 0"></a-light>
+      <a-light
+        type="directional"
+        intensity="0.5"
+        position="0 10 0"
+      ></a-light>
     </a-scene>
 
     <script>
       // --- STREAM EN VIVO HLS (Al Jazeera 24/7) ---
       var video = document.getElementById('videoLive');
-      var videoSrc = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8';
+      var videoSrc =
+        'https://live-hls-web-aje.getaj.net/AJE/index.m3u8';
 
       if (Hls.isSupported()) {
         var hls = new Hls();
@@ -167,7 +186,8 @@
       // --- CONTROLES 3D ---
       var btnPlay = document.getElementById('btnPlay');
       var btnVolUp = document.getElementById('btnVolUp');
-      var btnVolDown = document.getElementById('btnVolDown');
+      var btnVolDown =
+        document.getElementById('btnVolDown');
       var volText = document.getElementById('volText');
       var btnExit = document.getElementById('btnExit');
 
@@ -200,7 +220,8 @@
       });
 
       // --- MOSTRAR/OCULTAR VÍDEO 2D AL ENTRAR/SALIR DE VR ---
-      var sceneEl = document.querySelector('a-scene');
+      var sceneEl =
+        document.querySelector('a-scene');
 
       sceneEl.addEventListener('enter-vr', function () {
         video.classList.add('hidden');
@@ -212,9 +233,11 @@
         video.controls = true;
       });
 
-      // --- BOTÓN SALIR VR IN-LOOP ---
+      // --- BOTÓN SALIR VR ---
       btnExit.addEventListener('click', function () {
-        var scene = document.querySelector('a-scene');
+        var scene = document.querySelector(
+          'a-scene'
+        );
         if (scene.exitVR) {
           scene.exitVR();
         }
