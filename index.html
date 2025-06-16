@@ -1,42 +1,59 @@
 <!DOCTYPE html>
 <html lang="es">
-  <style>
-  #videoLive {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
-  }
-</style>
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con A-Frame (MP4)</title>
-    <meta name="description" content="Estadio VR con video MP4" />
+    <title>Estadio VR con A-Frame y HLS</title>
+    <meta name="description" content="Estadio VR con transmisión en vivo HLS" />
+    <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <!-- HLS.js para reproducir .m3u8 en navegadores -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+      /* Ocultar el video sin usar display:none para que siga cargando */
+      #videoLive {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
   </head>
-  
   <body>
+    <!-- Elemento de video oculto: será la fuente de la pantalla en A-Frame -->
+    <video
+      id="videoLive"
+      autoplay
+      muted
+      playsinline
+      webkit-playsinline
+      crossorigin="anonymous"
+    ></video>
+
+    <!-- Escena A-Frame -->
     <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Cámara VR -->
+      <!-- Cámara VR a 1.6 m de altura -->
       <a-entity position="0 1.6 0">
         <a-camera look-controls wasd-controls-enabled="false"></a-camera>
       </a-entity>
 
-      <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
+      <!-- Suelo del estadio -->
+      <a-plane
+        rotation="-90 0 0"
+        width="100"
+        height="100"
+        color="#2e2e2e"
+      ></a-plane>
 
-      <!-- Pantalla con MP4 -->
-      <video
-  id="videoLive"
-  autoplay
-  playsinline
-  muted
-  crossorigin="anonymous"
-  webkit-playsinline
-></video>
+      <!-- Pantalla de video en vivo -->
+      <a-video
+        src="#videoLive"
+        width="16"
+        height="9"
+        position="0 4 -15"
+      ></a-video>
 
-      <!-- Gradas del estadio -->
+      <!-- Gradas del estadio (medio cilindro) -->
       <a-cylinder
         position="0 5 -15"
         radius="30"
@@ -45,12 +62,37 @@
         side="double"
         segments-radial="64"
         open-ended="true"
-        theta-length="180">
-      </a-cylinder>
+        theta-length="180"
+      ></a-cylinder>
 
-      <!-- Luces -->
+      <!-- Iluminación -->
       <a-light type="ambient" intensity="1"></a-light>
-      <a-light type="directional" intensity="0.5" position="0 10 0"></a-light>
+      <a-light
+        type="directional"
+        intensity="0.5"
+        position="0 10 0"
+      ></a-light>
     </a-scene>
+
+    <!-- Script para cargar el stream HLS -->
+    <script>
+      var video = document.getElementById('videoLive');
+      var videoSrc =
+        'http://nasatv-lh.akamaihd.net/i/NASA_101@319270/master.m3u8';
+
+      if (Hls.isSupported()) {
+        var hls = new Hls();
+        hls.loadSource(videoSrc);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.play();
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = videoSrc;
+        video.addEventListener('loadedmetadata', function () {
+          video.play();
+        });
+      }
+    </script>
   </body>
 </html>
