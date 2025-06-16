@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <title>Estadio VR con A-Frame y HLS (HTTPS)</title>
-    <meta name="description" content="Estadio VR con transmisión en vivo HLS vía HTTPS" />
+    <meta name="description" content="Estadio VR con transmisión en vivo HLS vía HTTPS con audio" />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js para reproducir .m3u8 en navegadores -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* 1) Ocultar el <video> sin usar display:none */
+      /* Ocultar el <video> sin usar display:none */
       #videoLive {
         position: absolute;
         width: 1px;
@@ -18,7 +18,22 @@
         pointer-events: none;
       }
 
-      /* 2) Posicionar los botones en el centro-abajo */
+      /* Botón de audio */
+      #audioBtn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 10000;
+        padding: 10px 15px;
+        background: rgba(0,0,0,0.6);
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      /* Posicionar los botones VR y fullscreen centrados abajo */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
@@ -30,7 +45,7 @@
         z-index: 9999 !important;
       }
       .a-enter-vr-button {
-        left: calc(50% - 30px) !important; /* 40px ancho + 20px separación */
+        left: calc(50% - 30px) !important;
       }
       .a-fullscreen-button {
         left: calc(50% + 10px) !important;
@@ -38,30 +53,32 @@
     </style>
   </head>
   <body>
-    <!-- Elemento de video oculto: será la fuente de la pantalla en A-Frame -->
+    <!-- Elemento de video (fuente de textura y audio) -->
     <video
       id="videoLive"
       autoplay
-      muted
       playsinline
       webkit-playsinline
       crossorigin="anonymous"
     ></video>
 
+    <!-- Botón para activar audio -->
+    <button id="audioBtn">Activar audio</button>
+
     <!-- Escena A-Frame -->
     <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Cámara VR a 1.6 m de altura -->
+      <!-- Cámara VR -->
       <a-entity position="0 1.6 0">
         <a-camera look-controls wasd-controls-enabled="false"></a-camera>
       </a-entity>
 
-      <!-- Suelo del estadio -->
+      <!-- Suelo -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
 
-      <!-- Pantalla de video en vivo -->
+      <!-- Pantalla de video -->
       <a-video src="#videoLive" width="16" height="9" position="0 4 -15"></a-video>
 
-      <!-- Gradas del estadio (medio cilindro) -->
+      <!-- Gradas -->
       <a-cylinder
         position="0 5 -15"
         radius="30"
@@ -73,31 +90,41 @@
         theta-length="180"
       ></a-cylinder>
 
-      <!-- Iluminación -->
+      <!-- Luces -->
       <a-light type="ambient" intensity="1"></a-light>
       <a-light type="directional" intensity="0.5" position="0 10 0"></a-light>
     </a-scene>
 
-    <!-- Script para cargar el stream HLS vía HTTPS -->
+    <!-- Script para cargar HLS y controlar audio -->
     <script>
       var video = document.getElementById('videoLive');
-      // Stream HLS seguro por HTTPS (tráiler “Sintel” de Bitmovin)
-      var videoSrc =
-        'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
+      var btn   = document.getElementById('audioBtn');
+      var src   = 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
 
+      // Cargar stream HLS
       if (Hls.isSupported()) {
         var hls = new Hls();
-        hls.loadSource(videoSrc);
+        hls.loadSource(src);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
           video.play();
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = videoSrc;
+        video.src = src;
         video.addEventListener('loadedmetadata', function () {
           video.play();
         });
       }
+
+      // Al hacer clic en “Activar audio”
+      btn.addEventListener('click', function () {
+        // Desmutear y subir volumen
+        video.muted = false;
+        video.volume = 1.0;
+        video.play();
+        // Ocultar el botón
+        btn.style.display = 'none';
+      });
     </script>
   </body>
 </html>
