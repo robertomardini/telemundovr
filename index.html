@@ -2,10 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Stream Vivo y Controles In-Scene</title>
+    <title>Estadio VR con Controles y Salida In-Scene</title>
     <meta
       name="description"
-      content="Estadio VR con transmisión HLS, panel 3D de controles y botón de salida dentro del VR"
+      content="Estadio VR con HLS en vivo, panel 3D de controles y botón Salir dentro del mundo VR"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -65,7 +65,7 @@
       <!-- Suelo -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
 
-      <!-- Pantalla de vídeo (más grande y más lejos) -->
+      <!-- Pantalla de vídeo -->
       <a-video src="#videoLive" width="24" height="13.5" position="0 5 -20"></a-video>
 
       <!-- Gradas -->
@@ -80,49 +80,53 @@
         theta-length="180"
       ></a-cylinder>
 
-      <!-- Panel de controles 3D -->
+      <!-- Panel de controles + botón Salir -->
       <a-entity position="0 1.5 -2">
-        <a-plane width="1.6" height="0.4" color="#222" material="opacity:0.8"></a-plane>
+        <!-- Fondo del panel -->
+        <a-plane width="2.4" height="0.4" color="#222" material="opacity:0.8"></a-plane>
+        <!-- Play / Pause -->
         <a-entity
           id="btnPlay"
           class="interactive"
           geometry="primitive: plane; width: 0.4; height: 0.2"
           material="color: #0A74DA"
           text="value: Play; align: center; width: 1.5; color: #FFF"
-          position="-0.55 0 0.01"
+          position="-1.0 0 0.01"
         ></a-entity>
+        <!-- Volumen – -->
         <a-entity
           id="btnVolDown"
           class="interactive"
           geometry="primitive: plane; width: 0.2; height: 0.2"
           material="color: #555"
           text="value: -; align: center; width: 0.5; color: #FFF"
-          position="0 0 0.01"
+          position="-0.4 0 0.01"
         ></a-entity>
+        <!-- Indicador volumen -->
         <a-entity
           id="volText"
           text="value: Vol: 100%; align: center; width: 1.2; color: #FFF"
-          position="0.35 0 0.01"
+          position="0.4 0 0.01"
         ></a-entity>
+        <!-- Volumen + -->
         <a-entity
           id="btnVolUp"
           class="interactive"
           geometry="primitive: plane; width: 0.2; height: 0.2"
           material="color: #555"
           text="value: +; align: center; width: 0.5; color: #FFF"
-          position="0.75 0 0.01"
+          position="0.8 0 0.01"
+        ></a-entity>
+        <!-- Botón Salir -->
+        <a-entity
+          id="btnExit"
+          class="interactive"
+          geometry="primitive: plane; width: 0.3; height: 0.2"
+          material="color: #DA0A0A; opacity: 0.8"
+          text="value: Salir; align: center; width: 1; color: #FFF"
+          position="1.3 0 0.01"
         ></a-entity>
       </a-entity>
-
-      <!-- Botón de salida VR dentro del mundo -->
-      <a-entity
-        id="btnExit"
-        class="interactive"
-        geometry="primitive: plane; width: 0.3; height: 0.3"
-        material="color: #DA0A0A; opacity: 0.8"
-        text="value: X; align: center; width: 1; color: #FFF"
-        position="1.2 3 -3"
-      ></a-entity>
 
       <!-- Iluminación -->
       <a-light type="ambient" intensity="1"></a-light>
@@ -160,7 +164,11 @@
       var btnExit    = document.getElementById('btnExit');
 
       function updateVolText() {
-        volText.setAttribute('text', 'value', 'Vol: ' + Math.round(video.volume * 100) + '%');
+        volText.setAttribute(
+          'text',
+          'value',
+          'Vol: ' + Math.round(video.volume * 100) + '%'
+        );
       }
 
       btnPlay.addEventListener('click', function () {
@@ -183,8 +191,11 @@
         updateVolText();
       });
 
-      // --- BOTÓN SALIR VR IN-LOOP ---
+      // --- BOTÓN SALIR VR + MUTE ---
       btnExit.addEventListener('click', function () {
+        // Mutear audio
+        video.muted = true;
+        // Salir de VR
         var sceneEl = document.querySelector('a-scene');
         if (sceneEl.exitVR) {
           sceneEl.exitVR();
