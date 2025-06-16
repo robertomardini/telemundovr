@@ -12,7 +12,7 @@
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* 1) Ocultar el <video> sin usar display:none */
+      /* Ocultar el <video> sin usar display:none */
       #videoLive {
         position: absolute;
         width: 1px;
@@ -20,8 +20,7 @@
         opacity: 0;
         pointer-events: none;
       }
-      /* 2) Botón virtual de audio inherente a escena (no aplica aquí) */
-      /* 3) Ajustes para botones VR/fullscreen si aparecen */
+      /* Ajustes para botones VR/fullscreen centrados abajo */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
@@ -41,21 +40,20 @@
     </style>
   </head>
   <body>
-    <!-- Fuente de vídeo y audio -->
+    <!-- Fuente de vídeo y audio (inicialmente mute para permitir autoplay) -->
     <video
       id="videoLive"
       autoplay
+      muted
       playsinline
       webkit-playsinline
       crossorigin="anonymous"
     ></video>
 
     <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Rig: cámara + controladores -->
+      <!-- Rig: cámara + controladores en altura de 1.6 m -->
       <a-entity id="rig" position="0 1.6 0">
-        <!-- Cámara sin cursor central -->
         <a-camera wasd-controls-enabled="false"></a-camera>
-        <!-- Controladores Meta Quest -->
         <a-entity
           laser-controls="hand: left"
           raycaster="objects: .interactive"
@@ -67,20 +65,10 @@
       </a-entity>
 
       <!-- Suelo -->
-      <a-plane
-        rotation="-90 0 0"
-        width="100"
-        height="100"
-        color="#2e2e2e"
-      ></a-plane>
+      <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
 
       <!-- Pantalla de vídeo -->
-      <a-video
-        src="#videoLive"
-        width="16"
-        height="9"
-        position="0 4 -15"
-      ></a-video>
+      <a-video src="#videoLive" width="16" height="9" position="0 4 -15"></a-video>
 
       <!-- Gradas -->
       <a-cylinder
@@ -100,7 +88,7 @@
         class="interactive"
         geometry="primitive: plane; width: 1; height: 0.3"
         material="color: #000; opacity: 0.7"
-        text="value: Audio: On; align: center; width: 1.5; color: #FFF"
+        text="value: Audio: Off; align: center; width: 1.5; color: #FFF"
         position="0 2 -2"
       ></a-entity>
 
@@ -120,20 +108,19 @@
         hls.loadSource(src);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          video.muted = false; // arranca con audio activo
+          // deja el video en mute para autoplay
           video.play();
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = src;
-        video.muted = false;
-        video.addEventListener('loadedmetadata', () => video.play());
+        video.addEventListener('loadedmetadata', function () {
+          video.play();
+        });
       }
 
       // --- Control de audio in-scene ---
       var audioBtnEnt = document.getElementById('audioControl');
-      var audioOn = true;
-      audioBtnEnt.setAttribute('text', 'value', 'Audio: On');
-
+      var audioOn = false; // comienza mute
       audioBtnEnt.addEventListener('click', function () {
         audioOn = !audioOn;
         video.muted = !audioOn;
