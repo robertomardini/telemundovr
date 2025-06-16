@@ -3,22 +3,54 @@
   <head>
     <meta charset="utf-8" />
     <title>VR Stadium – Gradas y Pantalla Curva</title>
+    <meta name="description" content="Entorno VR con gradas en semicírculo y pantalla curva con vídeo en vivo" />
+    <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- Three.js (para convertir ángulos) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
       body { margin: 0; overflow: hidden; }
+      /* Posicionar los botones de VR / fullscreen */
+      .a-enter-vr-button,
+      .a-fullscreen-button {
+        position: fixed !important;
+        bottom: 20px !important;
+        width: 40px !important;
+        height: 40px !important;
+        z-index: 9999 !important;
+      }
+      .a-enter-vr-button { left: calc(50% - 30px) !important; }
+      .a-fullscreen-button { left: calc(50% + 10px) !important; }
     </style>
   </head>
+
   <body>
+    <!-- Vídeo oculto que alimenta la textura -->
+    <video
+      id="videoLive"
+      autoplay
+      muted
+      playsinline
+      webkit-playsinline
+      crossorigin="anonymous"
+      style="display: none;"
+    ></video>
+    <a-assets>
+      <video id="videoTexture" src="#videoLive" autoplay loop crossorigin="anonymous"></video>
+    </a-assets>
+
     <a-scene embedded vr-mode-ui="enabled: true">
-      <!-- Cámara / posición de espectador -->
+      <!-- Rig con cámara y controles básicos -->
       <a-entity position="0 1.6 0">
-        <a-camera wasd-controls="enabled: false"></a-camera>
+        <a-camera wasd-controls-enabled="false"></a-camera>
       </a-entity>
 
-      <!-- Suelo plano bajo las gradas -->
+      <!-- Suelo debajo de las gradas -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#222"></a-plane>
 
-      <!-- Gradas: cilindro segmentado de 90° -->
+      <!-- Gradas semicirculares -->
       <a-cylinder
         position="0 2 -5"
         rotation="0 180 0"
@@ -30,18 +62,10 @@
         material="color: #555; opacity: 0.9"
       ></a-cylinder>
 
-      <!-- Asientos: varios pequeños cubos en filas -->
-      <a-entity id="asientos">
-        <!-- Generamos 5 filas, 10 asientos por fila -->
-        <a-entity position="0 0 -5">
-          <a-entity
-            id="fila0" position="0 0.5 0"
-            template="row:0"
-          ></a-entity>
-        </a-entity>
-      </a-entity>
+      <!-- Asientos: generados por script -->
+      <a-entity id="seats"></a-entity>
 
-      <!-- Pantalla curva: segmento de cilindro enfrentado al espectador -->
+      <!-- Pantalla curva: cilindro abierto con textura de vídeo -->
       <a-cylinder
         position="0 3 -10"
         rotation="0 180 0"
@@ -52,43 +76,54 @@
         material="shader: flat; src: #videoTexture"
       ></a-cylinder>
 
-      <!-- Fuente de video (oculta) -->
-      <video id="videoLive" autoplay loop crossorigin="anonymous" src="https://live-hls-web-aje.getaj.net/AJE/index.m3u8"></video>
-      <a-assets>
-        <video id="videoTexture" src="#videoLive"></video>
-      </a-assets>
-
-      <!-- Luces -->
+      <!-- Iluminación suave -->
       <a-light type="ambient" intensity="0.6"></a-light>
       <a-light type="directional" intensity="0.8" position="0 10 -5"></a-light>
     </a-scene>
 
     <script>
-      // Script para generar asientos en filas
-      const filas = 5, asientosPorFila = 10;
-      const separacionX = 1.5, separacionZ = 0.8;
-      const entidadAsientos = document.querySelector('#asientos');
+      // 1) Cargar el stream HLS en el <video> oculto
+      var video = document.getElementById('videoLive');
+      var streamURL = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8';
+      if (Hls.isSupported()) {
+        var hls = new Hls();
+        hls.loadSource(streamURL);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.muted = false;
+          video.play();
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = streamURL;
+        video.addEventListener('loadedmetadata', function () {
+          video.muted = false;
+          video.play();
+        });
+      }
+
+      // 2) Generar asientos en semicírculo
+      var filas = 5;
+      var asientosPorFila = 10;
+      var radioGradas = 8.4; // un poco más que el radio interior
+      var seatsEntity = document.getElementById('seats');
 
       for (let fila = 0; fila < filas; fila++) {
         for (let i = 0; i < asientosPorFila; i++) {
-          const seat = document.createElement('a-box');
+          var angleDeg = -45 + (90 / (asientosPorFila - 1)) * i;
+          var angleRad = THREE.Math.degToRad(angleDeg);
+          var x = Math.sin(angleRad) * radioGradas;
+          var z = -5 + Math.cos(angleRad) * radioGradas;
+          var y = 0.3 + fila * 0.4;
+
+          var seat = document.createElement('a-box');
           seat.setAttribute('depth', '0.5');
           seat.setAttribute('width', '0.5');
           seat.setAttribute('height', '0.3');
           seat.setAttribute('material', 'color:#333');
-          // posicionamos cada asiento en semicírculo
-          const angle = -45 + (90 / (asientosPorFila - 1)) * i;
-          const rad = THREE.Math.degToRad(angle);
-          const x = Math.sin(rad) * (8 + 0.4);      // radio + offset
-          const z = -5 + Math.cos(rad) * (8 + 0.4);
-          // elevamos según la fila
-          const y = 0.3 + fila * 0.4;
           seat.setAttribute('position', `${x} ${y} ${z}`);
-          entidadAsientos.appendChild(seat);
+          seatsEntity.appendChild(seat);
         }
       }
     </script>
-    <!-- A-Frame depende de THREE, expuesto en window -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   </body>
 </html>
