@@ -2,14 +2,14 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con A-Frame y HLS</title>
-    <meta name="description" content="Estadio VR con transmisión en vivo HLS" />
+    <title>Estadio VR con A-Frame y HLS (HTTPS)</title>
+    <meta name="description" content="Estadio VR con transmisión en vivo HLS via HTTPS" />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js para reproducir .m3u8 en navegadores -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* Ocultar el video sin usar display:none para que siga cargando */
+      /* Ocultar el video sin usar display:none */
       #videoLive {
         position: absolute;
         width: 1px;
@@ -74,11 +74,12 @@
       ></a-light>
     </a-scene>
 
-    <!-- Script para cargar el stream HLS -->
+    <!-- Script para cargar el stream HLS via HTTPS -->
     <script>
       var video = document.getElementById('videoLive');
+      // Stream HLS seguro por HTTPS
       var videoSrc =
-        'http://nasatv-lh.akamaihd.net/i/NASA_101@319270/master.m3u8';
+        'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
 
       if (Hls.isSupported()) {
         var hls = new Hls();
