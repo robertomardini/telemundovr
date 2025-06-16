@@ -2,20 +2,41 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR A-Frame + Meta Quest Controls</title>
-    <meta name="description" content="Estadio VR con control de audio in-scene y soporte para Meta Quest" />
+    <title>Estadio VR A-Frame + Meta Quest (sin “mira”)</title>
+    <meta
+      name="description"
+      content="Estadio VR con control de audio in-scene y soporte Meta Quest, sin cursor central"
+    />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* Ocultar el <video> sin usar display:none */
+      /* 1) Ocultar el <video> sin usar display:none */
       #videoLive {
         position: absolute;
         width: 1px;
         height: 1px;
         opacity: 0;
         pointer-events: none;
+      }
+      /* 2) Botón virtual de audio inherente a escena (no aplica aquí) */
+      /* 3) Ajustes para botones VR/fullscreen si aparecen */
+      .a-enter-vr-button,
+      .a-fullscreen-button {
+        position: fixed !important;
+        bottom: env(safe-area-inset-bottom, 20px) !important;
+        width: 40px !important;
+        height: 40px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        z-index: 9999 !important;
+      }
+      .a-enter-vr-button {
+        left: calc(50% - 30px) !important;
+      }
+      .a-fullscreen-button {
+        left: calc(50% + 10px) !important;
       }
     </style>
   </head>
@@ -30,29 +51,20 @@
     ></video>
 
     <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Cámara + cursor para escritorio -->
-      <a-entity position="0 1.6 0">
-        <a-camera look-controls wasd-controls-enabled="false">
-          <a-entity
-            cursor="rayOrigin: mouse"
-            raycaster="objects: .interactive"
-            position="0 0 -0.5"
-          >
-            <a-ring
-              color="#FFF"
-              radius-inner="0.005"
-              radius-outer="0.01"
-            ></a-ring>
-          </a-entity>
-        </a-camera>
+      <!-- Rig: cámara + controladores -->
+      <a-entity id="rig" position="0 1.6 0">
+        <!-- Cámara sin cursor central -->
+        <a-camera wasd-controls-enabled="false"></a-camera>
+        <!-- Controladores Meta Quest -->
+        <a-entity
+          laser-controls="hand: left"
+          raycaster="objects: .interactive"
+        ></a-entity>
+        <a-entity
+          laser-controls="hand: right"
+          raycaster="objects: .interactive"
+        ></a-entity>
       </a-entity>
-
-      <!-- Controllers Meta Quest -->
-      <a-entity
-        laser-controls="hand: right"
-        raycaster="objects: .interactive"
-      ></a-entity>
-      <a-entity laser-controls="hand: left"></a-entity>
 
       <!-- Suelo -->
       <a-plane
@@ -92,7 +104,7 @@
         position="0 2 -2"
       ></a-entity>
 
-      <!-- Luces -->
+      <!-- Iluminación -->
       <a-light type="ambient" intensity="1"></a-light>
       <a-light type="directional" intensity="0.5" position="0 10 0"></a-light>
     </a-scene>
@@ -100,25 +112,26 @@
     <script>
       // --- Carga HLS ---
       var video = document.getElementById('videoLive');
-      var src = 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
+      var src =
+        'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
 
       if (Hls.isSupported()) {
         var hls = new Hls();
         hls.loadSource(src);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          video.muted = true;
+          video.muted = false; // arranca con audio activo
           video.play();
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = src;
-        video.muted = true;
+        video.muted = false;
         video.addEventListener('loadedmetadata', () => video.play());
       }
 
       // --- Control de audio in-scene ---
       var audioBtnEnt = document.getElementById('audioControl');
-      var audioOn = true; // comienza con audio on
+      var audioOn = true;
       audioBtnEnt.setAttribute('text', 'value', 'Audio: On');
 
       audioBtnEnt.addEventListener('click', function () {
@@ -130,9 +143,6 @@
           audioOn ? 'Audio: On' : 'Audio: Off'
         );
       });
-
-      // Para que los controladores lancen el evento click en boil
-      AFRAME.registerComponent('interactive', {});
     </script>
   </body>
 </html>
