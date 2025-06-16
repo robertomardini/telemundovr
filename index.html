@@ -2,25 +2,30 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Controles y Salida In-Scene</title>
+    <title>Estadio VR con Controles y Vídeo 2D Tras VR</title>
     <meta
       name="description"
-      content="Estadio VR con HLS en vivo, panel 3D de controles y botón Salir dentro del mundo VR"
+      content="Estadio VR con HLS en vivo, panel 3D de controles y vídeo visible en la web tras salir de VR"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* Ocultar el <video> sin usar display:none */
+      /* Vídeo 2D al salir de VR */
       #videoLive {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        opacity: 0;
-        pointer-events: none;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: auto;
+        z-index: 1000;
       }
-      /* Ajustes para los botones VR/fullscreen centrados abajo */
+      /* Ocultar vídeo mientras se esté en VR */
+      #videoLive.hidden {
+        display: none;
+      }
+      /* Botones VR/fullscreen centrados abajo */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
@@ -38,18 +43,18 @@
     </style>
   </head>
   <body>
-    <!-- Vídeo oculto (textura + audio) -->
+    <!-- Vídeo oculto en 2D mientras esté en VR -->
     <video
       id="videoLive"
+      class="hidden"
       autoplay
-      muted
       playsinline
       webkit-playsinline
       crossorigin="anonymous"
     ></video>
 
     <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Rig con cámara y controllers a 1.6m -->
+      <!-- Rig con cámara y controllers a 1.6 m -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera wasd-controls-enabled="false"></a-camera>
         <a-entity
@@ -65,7 +70,7 @@
       <!-- Suelo -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
 
-      <!-- Pantalla de vídeo -->
+      <!-- Pantalla de vídeo VR -->
       <a-video src="#videoLive" width="24" height="13.5" position="0 5 -20"></a-video>
 
       <!-- Gradas -->
@@ -80,11 +85,9 @@
         theta-length="180"
       ></a-cylinder>
 
-      <!-- Panel de controles + botón Salir -->
+      <!-- Panel de controles + Salir -->
       <a-entity position="0 1.5 -2">
-        <!-- Fondo del panel -->
         <a-plane width="2.4" height="0.4" color="#222" material="opacity:0.8"></a-plane>
-        <!-- Play / Pause -->
         <a-entity
           id="btnPlay"
           class="interactive"
@@ -93,7 +96,6 @@
           text="value: Play; align: center; width: 1.5; color: #FFF"
           position="-1.0 0 0.01"
         ></a-entity>
-        <!-- Volumen – -->
         <a-entity
           id="btnVolDown"
           class="interactive"
@@ -102,13 +104,11 @@
           text="value: -; align: center; width: 0.5; color: #FFF"
           position="-0.4 0 0.01"
         ></a-entity>
-        <!-- Indicador volumen -->
         <a-entity
           id="volText"
           text="value: Vol: 100%; align: center; width: 1.2; color: #FFF"
           position="0.4 0 0.01"
         ></a-entity>
-        <!-- Volumen + -->
         <a-entity
           id="btnVolUp"
           class="interactive"
@@ -117,7 +117,6 @@
           text="value: +; align: center; width: 0.5; color: #FFF"
           position="0.8 0 0.01"
         ></a-entity>
-        <!-- Botón Salir -->
         <a-entity
           id="btnExit"
           class="interactive"
@@ -157,11 +156,11 @@
       }
 
       // --- CONTROLES 3D ---
-      var btnPlay    = document.getElementById('btnPlay');
-      var btnVolUp   = document.getElementById('btnVolUp');
+      var btnPlay = document.getElementById('btnPlay');
+      var btnVolUp = document.getElementById('btnVolUp');
       var btnVolDown = document.getElementById('btnVolDown');
-      var volText    = document.getElementById('volText');
-      var btnExit    = document.getElementById('btnExit');
+      var volText = document.getElementById('volText');
+      var btnExit = document.getElementById('btnExit');
 
       function updateVolText() {
         volText.setAttribute(
@@ -191,14 +190,24 @@
         updateVolText();
       });
 
-      // --- BOTÓN SALIR VR + MUTE ---
+      // --- MOSTRAR/OCULTAR VÍDEO 2D AL ENTRAR/SALIR DE VR ---
+      var sceneEl = document.querySelector('a-scene');
+
+      sceneEl.addEventListener('enter-vr', function () {
+        video.classList.add('hidden');
+        video.controls = false;
+      });
+
+      sceneEl.addEventListener('exit-vr', function () {
+        video.classList.remove('hidden');
+        video.controls = true;
+      });
+
+      // --- BOTÓN SALIR VR IN-LOOP ---
       btnExit.addEventListener('click', function () {
-        // Mutear audio
-        video.muted = true;
-        // Salir de VR
-        var sceneEl = document.querySelector('a-scene');
-        if (sceneEl.exitVR) {
-          sceneEl.exitVR();
+        var scene = document.querySelector('a-scene');
+        if (scene.exitVR) {
+          scene.exitVR();
         }
       });
     </script>
