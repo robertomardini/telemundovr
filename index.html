@@ -2,17 +2,14 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR A-Frame + Meta Quest (sin “mira”)</title>
-    <meta
-      name="description"
-      content="Estadio VR con control de audio in-scene y soporte Meta Quest, sin cursor central"
-    />
+    <title>Estadio VR con Panel 3D de Controles</title>
+    <meta name="description" content="Estadio VR con controles in-scene: play/pause y volumen" />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* Ocultar el <video> sin usar display:none */
+      /* Ocultar el video sin display:none */
       #videoLive {
         position: absolute;
         width: 1px;
@@ -20,15 +17,13 @@
         opacity: 0;
         pointer-events: none;
       }
-      /* Ajustes para botones VR/fullscreen centrados abajo */
+      /* Ajustes para los botones A-Frame VR/fullscreen */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
         bottom: env(safe-area-inset-bottom, 20px) !important;
         width: 40px !important;
         height: 40px !important;
-        padding: 0 !important;
-        margin: 0 !important;
         z-index: 9999 !important;
       }
       .a-enter-vr-button {
@@ -40,7 +35,7 @@
     </style>
   </head>
   <body>
-    <!-- Fuente de vídeo y audio (inicialmente mute para permitir autoplay) -->
+    <!-- Fuente de vídeo y audio -->
     <video
       id="videoLive"
       autoplay
@@ -51,17 +46,11 @@
     ></video>
 
     <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Rig: cámara + controladores en altura de 1.6 m -->
+      <!-- Rig con cámara y controllers -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera wasd-controls-enabled="false"></a-camera>
-        <a-entity
-          laser-controls="hand: left"
-          raycaster="objects: .interactive"
-        ></a-entity>
-        <a-entity
-          laser-controls="hand: right"
-          raycaster="objects: .interactive"
-        ></a-entity>
+        <a-entity laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
+        <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
       </a-entity>
 
       <!-- Suelo -->
@@ -82,15 +71,44 @@
         theta-length="180"
       ></a-cylinder>
 
-      <!-- Botón virtual de audio -->
-      <a-entity
-        id="audioControl"
-        class="interactive"
-        geometry="primitive: plane; width: 1; height: 0.3"
-        material="color: #000; opacity: 0.7"
-        text="value: Audio: Off; align: center; width: 1.5; color: #FFF"
-        position="0 2 -2"
-      ></a-entity>
+      <!-- Panel de controles -->
+      <a-entity position="0 1.5 -2">
+        <!-- Fondo del panel -->
+        <a-plane width="1.6" height="0.4" color="#222" material="opacity:0.8"></a-plane>
+        <!-- Botón Play/Pause -->
+        <a-entity
+          id="btnPlay"
+          class="interactive"
+          geometry="primitive: plane; width: 0.4; height: 0.2"
+          material="color: #0A74DA"
+          text="value: Play; align: center; width: 1.5; color: #FFF"
+          position="-0.55 0 0.01"
+        ></a-entity>
+        <!-- Botón Volumen – -->
+        <a-entity
+          id="btnVolDown"
+          class="interactive"
+          geometry="primitive: plane; width: 0.2; height: 0.2"
+          material="color: #555"
+          text="value: -; align: center; width: 0.5; color: #FFF"
+          position="0 0 0.01"
+        ></a-entity>
+        <!-- Indicador de volumen -->
+        <a-entity
+          id="volText"
+          text="value: Vol: 100%; align: center; width: 1.2; color: #FFF"
+          position="0.35 0 0.01"
+        ></a-entity>
+        <!-- Botón Volumen + -->
+        <a-entity
+          id="btnVolUp"
+          class="interactive"
+          geometry="primitive: plane; width: 0.2; height: 0.2"
+          material="color: #555"
+          text="value: +; align: center; width: 0.5; color: #FFF"
+          position="0.75 0 0.01"
+        ></a-entity>
+      </a-entity>
 
       <!-- Iluminación -->
       <a-light type="ambient" intensity="1"></a-light>
@@ -98,37 +116,54 @@
     </a-scene>
 
     <script>
-      // --- Carga HLS ---
+      // CARGA DEL STREAM HLS
       var video = document.getElementById('videoLive');
-      var src =
-        'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
-
+      var src = 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
       if (Hls.isSupported()) {
         var hls = new Hls();
         hls.loadSource(src);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          // deja el video en mute para autoplay
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.muted = false;
+          video.volume = 1.0;
           video.play();
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = src;
-        video.addEventListener('loadedmetadata', function () {
-          video.play();
-        });
+        video.muted = false;
+        video.volume = 1.0;
+        video.addEventListener('loadedmetadata', () => video.play());
       }
 
-      // --- Control de audio in-scene ---
-      var audioBtnEnt = document.getElementById('audioControl');
-      var audioOn = false; // comienza mute
-      audioBtnEnt.addEventListener('click', function () {
-        audioOn = !audioOn;
-        video.muted = !audioOn;
-        this.setAttribute(
-          'text',
-          'value',
-          audioOn ? 'Audio: On' : 'Audio: Off'
-        );
+      // REFERENCIAS A BOTONES
+      var btnPlay   = document.getElementById('btnPlay');
+      var btnVolUp  = document.getElementById('btnVolUp');
+      var btnVolDown= document.getElementById('btnVolDown');
+      var volText   = document.getElementById('volText');
+
+      // FUNCIONES DE CONTROL
+      function updateVolText() {
+        volText.setAttribute('text', 'value', 'Vol: ' + Math.round(video.volume * 100) + '%');
+      }
+
+      btnPlay.addEventListener('click', function () {
+        if (video.paused) {
+          video.play();
+          this.setAttribute('text', 'value', 'Pause');
+        } else {
+          video.pause();
+          this.setAttribute('text', 'value', 'Play');
+        }
+      });
+
+      btnVolUp.addEventListener('click', function () {
+        video.volume = Math.min(1, video.volume + 0.1);
+        updateVolText();
+      });
+
+      btnVolDown.addEventListener('click', function () {
+        video.volume = Math.max(0, video.volume - 0.1);
+        updateVolText();
       });
     </script>
   </body>
