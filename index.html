@@ -61,7 +61,7 @@
       </a-assets>
 
       <!-- Rig con cámara y controllers a 1.6 m -->
-      <a-entity id="rig" position="0 1.6 0">
+      <a-entity id="rig" position="0 6 0">
         <a-camera wasd-controls-enabled="false"></a-camera>
         <a-entity laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
         <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
@@ -74,28 +74,28 @@
       <a-entity
         id="futbolStudio"
         gltf-model="#futbolModel"
-        position="0 0 -5"
-        rotation="0 180 0"
+        position="5 -1 10"
+        rotation="0 90 0"
         scale="1 1 1"
       ></a-entity>
 
       <!-- Pantalla de vídeo VR -->
-      <a-video src="#videoLive" width="24" height="13.5" position="0 5 -20"></a-video>
+      <a-video src="#videoLive" width="24" height="13.5" position="0 10 -20"></a-video>
 
       <!-- Gradas -->
       <a-cylinder
-        position="0 5 -20"
-        radius="40"
-        height="10"
+        position="0 10 -10"
+        radius="80"
+        height="100"
         color="#444"
         side="double"
         segments-radial="64"
         open-ended="true"
-        theta-length="180"
+        theta-length="360"
       ></a-cylinder>
 
       <!-- Panel de controles + Salir -->
-      <a-entity position="0 1.5 -2">
+      <a-entity position="0 6.5 -2">
         <a-plane width="2.4" height="0.4" color="#222" material="opacity:0.8"></a-plane>
         <a-entity
           id="btnPlay"
