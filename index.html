@@ -2,14 +2,13 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Panel 3D de Controles</title>
-    <meta name="description" content="Estadio VR con controles in-scene: play/pause y volumen" />
+    <title>Estadio VR con Panel 3D – Stream Vivo</title>
+    <meta name="description" content="Estadio VR con controles in-scene y vídeo en vivo" />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* Ocultar el video sin display:none */
       #videoLive {
         position: absolute;
         width: 1px;
@@ -17,7 +16,6 @@
         opacity: 0;
         pointer-events: none;
       }
-      /* Ajustes para los botones A-Frame VR/fullscreen */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
@@ -35,7 +33,7 @@
     </style>
   </head>
   <body>
-    <!-- Fuente de vídeo y audio -->
+    <!-- Vídeo oculto (fuente de textura y audio) -->
     <video
       id="videoLive"
       autoplay
@@ -46,20 +44,14 @@
     ></video>
 
     <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Rig con cámara y controllers -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera wasd-controls-enabled="false"></a-camera>
         <a-entity laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
         <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
       </a-entity>
 
-      <!-- Suelo -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
-
-      <!-- Pantalla de vídeo -->
       <a-video src="#videoLive" width="16" height="9" position="0 4 -15"></a-video>
-
-      <!-- Gradas -->
       <a-cylinder
         position="0 5 -15"
         radius="30"
@@ -71,11 +63,9 @@
         theta-length="180"
       ></a-cylinder>
 
-      <!-- Panel de controles -->
+      <!-- Panel de controles 3D -->
       <a-entity position="0 1.5 -2">
-        <!-- Fondo del panel -->
         <a-plane width="1.6" height="0.4" color="#222" material="opacity:0.8"></a-plane>
-        <!-- Botón Play/Pause -->
         <a-entity
           id="btnPlay"
           class="interactive"
@@ -84,7 +74,6 @@
           text="value: Play; align: center; width: 1.5; color: #FFF"
           position="-0.55 0 0.01"
         ></a-entity>
-        <!-- Botón Volumen – -->
         <a-entity
           id="btnVolDown"
           class="interactive"
@@ -93,13 +82,11 @@
           text="value: -; align: center; width: 0.5; color: #FFF"
           position="0 0 0.01"
         ></a-entity>
-        <!-- Indicador de volumen -->
         <a-entity
           id="volText"
           text="value: Vol: 100%; align: center; width: 1.2; color: #FFF"
           position="0.35 0 0.01"
         ></a-entity>
-        <!-- Botón Volumen + -->
         <a-entity
           id="btnVolUp"
           class="interactive"
@@ -110,20 +97,21 @@
         ></a-entity>
       </a-entity>
 
-      <!-- Iluminación -->
       <a-light type="ambient" intensity="1"></a-light>
       <a-light type="directional" intensity="0.5" position="0 10 0"></a-light>
     </a-scene>
 
     <script>
-      // CARGA DEL STREAM HLS
+      // --- STREAM EN VIVO (HLS) ---
       var video = document.getElementById('videoLive');
-      var src = 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
+      // Este es un stream de prueba en vivo de Mux (noticias)
+      var src = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+
       if (Hls.isSupported()) {
         var hls = new Hls();
         hls.loadSource(src);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
           video.muted = false;
           video.volume = 1.0;
           video.play();
@@ -132,16 +120,17 @@
         video.src = src;
         video.muted = false;
         video.volume = 1.0;
-        video.addEventListener('loadedmetadata', () => video.play());
+        video.addEventListener('loadedmetadata', function () {
+          video.play();
+        });
       }
 
-      // REFERENCIAS A BOTONES
-      var btnPlay   = document.getElementById('btnPlay');
-      var btnVolUp  = document.getElementById('btnVolUp');
-      var btnVolDown= document.getElementById('btnVolDown');
-      var volText   = document.getElementById('volText');
+      // --- CONTROLES 3D ---
+      var btnPlay    = document.getElementById('btnPlay');
+      var btnVolUp   = document.getElementById('btnVolUp');
+      var btnVolDown = document.getElementById('btnVolDown');
+      var volText    = document.getElementById('volText');
 
-      // FUNCIONES DE CONTROL
       function updateVolText() {
         volText.setAttribute('text', 'value', 'Vol: ' + Math.round(video.volume * 100) + '%');
       }
