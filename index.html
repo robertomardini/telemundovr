@@ -1,11 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
+  <style>
+  #videoLive {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>
   <head>
     <meta charset="utf-8" />
     <title>Estadio VR con A-Frame (MP4)</title>
     <meta name="description" content="Estadio VR con video MP4" />
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   </head>
+  
   <body>
     <a-scene vr-mode-ui="enabled: true" embedded>
       <!-- Cámara VR -->
@@ -17,14 +27,14 @@
       <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
 
       <!-- Pantalla con MP4 -->
-      <a-video
-        src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-        width="16" height="9"
-        position="0 4 -15"
-        autoplay="true"
-        loop="true"
-        crossorigin="anonymous">
-      </a-video>
+      <video
+  id="videoLive"
+  autoplay
+  playsinline
+  muted
+  crossorigin="anonymous"
+  webkit-playsinline
+></video>
 
       <!-- Gradas del estadio -->
       <a-cylinder
