@@ -163,9 +163,9 @@
     </a-scene>
 
     <script>
-      // --- STREAM EN VIVO HLS (Al Jazeera 24/7) ---//
+      // --- STREAM EN VIVO HLS (Al Jazeera 24/7) ---
       var video = document.getElementById('videoLive');
-   // ---   var videoSrc = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8';---//
+   // ---   var videoSrc = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8'; ---
 var videoSrc = 'https://cdn3.wowza.com/5/ZWQ1K2NYTmpFbGsr/BEK-WOWZA-1/smil:BEKPRIMEW.smil/playlist.m3u8';
 
 
@@ -186,7 +186,22 @@ var videoSrc = 'https://cdn3.wowza.com/5/ZWQ1K2NYTmpFbGsr/BEK-WOWZA-1/smil:BEKPR
           video.play();
         });
       }
-
+// --- Audio ambiente ---
+      var crowdAudio = document.getElementById('crowdAudio');
+      var btnCrowd = document.getElementById('btnCrowd');
+      var crowdOn = true;
+      // Asegurar autoplay en algunos navegadores
+      crowdAudio.volume = 0.5;
+      crowdAudio.play().catch(() => {});
+      btnCrowd.addEventListener('click', function () {
+        crowdOn = !crowdOn;
+        crowdAudio.muted = !crowdOn;
+        this.setAttribute(
+          'text',
+          'value',
+          crowdOn ? 'Crowd: On' : 'Crowd: Off'
+        );
+      });
       // --- CONTROLES 3D ---
       var btnPlay = document.getElementById('btnPlay');
       var btnVolUp = document.getElementById('btnVolUp');
