@@ -2,10 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Modelo 3D Centrado, Iluminación e Audio Ambiente</title>
+    <title>Estadio VR con Modelo 3D Centrado e Iluminación Ajustada</title>
     <meta
       name="description"
-      content="Estadio VR con HLS en vivo, panel 3D de controles, vídeo 2D tras VR, modelo 3D futbol_studio.glb centrado con iluminación y audio ambiente"
+      content="Estadio VR con HLS en vivo, panel 3D de controles, vídeo 2D tras VR y modelo 3D futbol_studio.glb centrado con iluminación"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -52,17 +52,16 @@
       webkit-playsinline
       crossorigin="anonymous"
     ></video>
-    <!-- Audio ambiente -->
-    <audio id="crowdAudio" src="Crowd_Sound.mp3" loop autoplay></audio>
 
     <a-scene vr-mode-ui="enabled: true" embedded>
-      <!-- Assets: modelo 3D -->
+      <!-- Assets: tu modelo glTF y otros -->
       <a-assets>
+        <!-- Reemplazamos el modelo por futbol_studio.glb -->
         <a-asset-item id="futbolModel" src="futbol_studio.glb"></a-asset-item>
       </a-assets>
 
       <!-- Rig con cámara y controllers a 1.6 m -->
-      <a-entity id="rig" position="0 1.6 0">
+      <a-entity id="rig" position="0 6 0">
         <a-camera wasd-controls-enabled="false"></a-camera>
         <a-entity laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
         <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
@@ -75,36 +74,36 @@
       <a-entity
         id="futbolStudio"
         gltf-model="#futbolModel"
-        position="0 0 -5"
-        rotation="0 180 0"
+        position="5 -1 10"
+        rotation="0 90 0"
         scale="1 1 1"
       ></a-entity>
 
       <!-- Pantalla de vídeo VR -->
-      <a-video src="#videoLive" width="24" height="13.5" position="0 5 -20"></a-video>
+      <a-video src="#videoLive" width="24" height="13.5" position="0 10 -20"></a-video>
 
       <!-- Gradas -->
       <a-cylinder
-        position="0 5 -20"
-        radius="40"
-        height="10"
+        position="0 10 -10"
+        radius="80"
+        height="100"
         color="#444"
         side="double"
         segments-radial="64"
         open-ended="true"
-        theta-length="180"
+        theta-length="360"
       ></a-cylinder>
 
-      <!-- Panel de controles + Salir + Audio Ambiente -->
-      <a-entity position="0 1.5 -2">
-        <a-plane width="3.5" height="0.4" color="#222" material="opacity:0.8"></a-plane>
+      <!-- Panel de controles + Salir -->
+      <a-entity position="0 6 -2">
+        <a-plane width="2.4" height="0.4" color="#222" material="opacity:0.8"></a-plane>
         <a-entity
           id="btnPlay"
           class="interactive"
           geometry="primitive: plane; width: 0.4; height: 0.2"
           material="color: #0A74DA"
           text="value: Play; align: center; width: 1.5; color: #FFF"
-          position="-1.2 0 0.01"
+          position="-1.0 0 0.01"
         ></a-entity>
         <a-entity
           id="btnVolDown"
@@ -112,12 +111,12 @@
           geometry="primitive: plane; width: 0.2; height: 0.2"
           material="color: #555"
           text="value: -; align: center; width: 0.5; color: #FFF"
-          position="-0.7 0 0.01"
+          position="-0.4 0 0.01"
         ></a-entity>
         <a-entity
           id="volText"
           text="value: Vol: 100%; align: center; width: 1.2; color: #FFF"
-          position="-0.1 0 0.01"
+          position="0.4 0 0.01"
         ></a-entity>
         <a-entity
           id="btnVolUp"
@@ -125,7 +124,7 @@
           geometry="primitive: plane; width: 0.2; height: 0.2"
           material="color: #555"
           text="value: +; align: center; width: 0.5; color: #FFF"
-          position="0.5 0 0.01"
+          position="0.8 0 0.01"
         ></a-entity>
         <a-entity
           id="btnExit"
@@ -133,25 +132,20 @@
           geometry="primitive: plane; width: 0.3; height: 0.2"
           material="color: #DA0A0A; opacity: 0.8"
           text="value: Salir; align: center; width: 1; color: #FFF"
-          position="1.1 0 0.01"
-        ></a-entity>
-        <a-entity
-          id="btnCrowd"
-          class="interactive"
-          geometry="primitive: plane; width: 0.4; height: 0.2"
-          material="color: #0A74DA"
-          text="value: Crowd: On; align: center; width: 1.5; color: #FFF"
-          position="1.8 0 0.01"
+          position="1.3 0 0.01"
         ></a-entity>
       </a-entity>
 
       <!-- Iluminación ajustada -->
+      <!-- Luz ambiental suave -->
       <a-entity light="type: ambient; intensity: 0.5; color: #ffffff"></a-entity>
+      <!-- Luz direccional como “sol” -->
       <a-entity
         light="type: directional; intensity: 0.8; color: #ffffff"
         position="1 2 1"
         rotation="-45 45 0"
       ></a-entity>
+      <!-- Punto de luz para resaltar -->
       <a-entity
         light="type: point; intensity: 1.2; distance: 10; decay: 2; color: #ffeedd"
         position="0 3 -5"
@@ -159,9 +153,12 @@
     </a-scene>
 
     <script>
-      // --- STREAM EN VIVO HLS ---
+      // --- STREAM EN VIVO HLS (Al Jazeera 24/7) ---//
       var video = document.getElementById('videoLive');
-      var videoSrc = 'https://cdn3.wowza.com/5/ZWQ1K2NYTmpFbGsr/BEK-WOWZA-1/smil:BEKPRIMEW.smil/playlist.m3u8';
+   // ---   var videoSrc = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8';---//
+var videoSrc = 'https://cdn3.wowza.com/5/ZWQ1K2NYTmpFbGsr/BEK-WOWZA-1/smil:BEKPRIMEW.smil/playlist.m3u8';
+
+
       if (Hls.isSupported()) {
         var hls = new Hls();
         hls.loadSource(videoSrc);
@@ -180,36 +177,17 @@
         });
       }
 
-      // --- Audio ambiente ---
-      var crowdAudio = document.getElementById('crowdAudio');
-      var btnCrowd = document.getElementById('btnCrowd');
-      var crowdOn = true;
-      // Asegurar autoplay en algunos navegadores
-      crowdAudio.volume = 0.5;
-      crowdAudio.play().catch(() => {});
-      btnCrowd.addEventListener('click', function () {
-        crowdOn = !crowdOn;
-        crowdAudio.muted = !crowdOn;
-        this.setAttribute(
-          'text',
-          'value',
-          crowdOn ? 'Crowd: On' : 'Crowd: Off'
-        );
-      });
-
-      // --- Controles de vídeo ---
+      // --- CONTROLES 3D ---
       var btnPlay = document.getElementById('btnPlay');
       var btnVolUp = document.getElementById('btnVolUp');
       var btnVolDown = document.getElementById('btnVolDown');
       var volText = document.getElementById('volText');
       var btnExit = document.getElementById('btnExit');
+
       function updateVolText() {
-        volText.setAttribute(
-          'text',
-          'value',
-          'Vol: ' + Math.round(video.volume * 100) + '%'
-        );
+        volText.setAttribute('text', 'value', 'Vol: ' + Math.round(video.volume * 100) + '%');
       }
+
       btnPlay.addEventListener('click', function () {
         if (video.paused) {
           video.play();
@@ -219,27 +197,31 @@
           this.setAttribute('text', 'value', 'Play');
         }
       });
+
       btnVolUp.addEventListener('click', function () {
         video.volume = Math.min(1, video.volume + 0.1);
         updateVolText();
       });
+
       btnVolDown.addEventListener('click', function () {
         video.volume = Math.max(0, video.volume - 0.1);
         updateVolText();
       });
 
-      // --- Mostrar/ocultar vídeo 2D al entrar/salir de VR ---
+      // --- MOSTRAR/OCULTAR VÍDEO 2D AL ENTRAR/SALIR DE VR ---
       var sceneEl = document.querySelector('a-scene');
+
       sceneEl.addEventListener('enter-vr', function () {
         video.classList.add('hidden');
         video.controls = false;
       });
+
       sceneEl.addEventListener('exit-vr', function () {
         video.classList.remove('hidden');
         video.controls = true;
       });
 
-      // --- Botón Salir VR ---
+      // --- BOTÓN SALIR VR ---
       btnExit.addEventListener('click', function () {
         var scene = document.querySelector('a-scene');
         if (scene.exitVR) {
