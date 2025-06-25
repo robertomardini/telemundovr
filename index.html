@@ -1,20 +1,20 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Browser Incrustado</title>
+    <title>Estadio VR con Modelo 3D Centrado e Iluminación Ajustada</title>
     <meta
       name="description"
-      content="Estadio VR con navegador incrustado para Telemundo Noticias Ahora"
+      content="Estadio VR con HLS en vivo, panel 3D de controles, vídeo 2D tras VR y modelo 3D scifi-garage.glb centrado con iluminación"
     />
     <!-- A-Frame -->
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- Componente de iframe -->
+   <!-- <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script> -->
     <script src="https://unpkg.com/aframe-iframe-component@3.0.2/dist/aframe-iframe-component.min.js"></script>
-    <!-- HLS.js (si aún lo necesitas para otros vídeos) -->
+
+    <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      /* Vídeo 2D al salir de VR (si sigues teniendo vídeoLive) */
+      /* Vídeo 2D al salir de VR */
       #videoLive {
         position: fixed;
         bottom: 0;
@@ -23,13 +23,15 @@
         height: auto;
         z-index: 1000;
       }
+      /* Ocultar vídeo mientras se esté en VR */
       #videoLive.hidden {
         display: none;
       }
+      /* Botones VR/fullscreen centrados abajo */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
-        bottom: env(safe-area-inset-bottom,20px) !important;
+        bottom: env(safe-area-inset-bottom, 20px) !important;
         width: 40px !important;
         height: 40px !important;
         z-index: 9999 !important;
@@ -43,7 +45,7 @@
     </style>
   </head>
   <body>
-    <!-- Si aún usas videoLive -->
+    <!-- Vídeo oculto en 2D mientras esté en VR -->
     <video
       id="videoLive"
       class="hidden"
@@ -52,121 +54,150 @@
       webkit-playsinline
       crossorigin="anonymous"
     ></video>
-    <!-- Audio ambiente -->
-    <audio id="crowdAudio" src="-Crowd_Sound.mp3" loop></audio>
-
-    <!-- Quitamos embedded para que siempre aparezca el botón VR -->
-    <a-scene vr-mode-ui="enabled: true">
+<!-- Audio ambiente (sin autoplay directo) -->
+    <audio id="crowdAudio" src="-Crowd_Sound.mp3-" loop crossorigin="anonymous"></audio>
+    
+    <a-scene vr-mode-ui="enabled: true" embedded>
+      <!-- Assets: tu modelo glTF y otros -->
       <a-assets>
+        <!-- Reemplazamos el modelo por scifi-garage.glb -->
         <a-asset-item id="futbolModel" src="moes_simpsons.glb"></a-asset-item>
       </a-assets>
 
-      <!-- Rig y cámara -->
-      <a-entity position="0 1.6 0">
-        <a-camera></a-camera>
-        <a-entity laser-controls="hand:left" raycaster="objects:.interactive"></a-entity>
-        <a-entity laser-controls="hand:right" raycaster="objects:.interactive"></a-entity>
+      <!-- Rig con cámara y controllers a 1.6 m -->
+      <a-entity id="rig" position="-35 30 0">
+        <a-camera wasd-controls-enabled="false"></a-camera>
+        <a-entity laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
+        <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
       </a-entity>
 
       <!-- Suelo -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
 
-      <!-- Modelo 3D -->
+      <!-- Modelo 3D centrado -->
       <a-entity
+        id="futbolStudio"
         gltf-model="#futbolModel"
-        position="0 0 -5"
+        position="0 0 0"
         rotation="0 180 0"
-        scale="1 1 1"
+        scale="15 15 15"
       ></a-entity>
 
-      <!-- Browser dentro de la escena -->
+      <!-- Pantalla de vídeo VR -->
+      <!-- <a-video src="#videoLive" width="50" height="30" position="-10 31 -50"></a-video> -->
+      
       <a-entity
-        iframe="src: https://www.google.com; width: 24; height: 13.5"
-        geometry="primitive:plane; width:24; height:13.5"
-        position="0 5 -20"
-      ></a-entity>
+  iframe="src: https://www.telemundo.com/noticias-live; width: 50; height: 30"
+  position="-10 31 -50"
+  geometry="primitive: plane; width: 50; height: 30">
+</a-entity>
 
       <!-- Gradas -->
       <a-cylinder
-        position="0 5 -20"
-        radius="40"
-        height="10"
+        position="0 10 -10"
+        radius="80"
+        height="100"
         color="#444"
         side="double"
         segments-radial="64"
         open-ended="true"
-        theta-length="180"
+        theta-length="0"
       ></a-cylinder>
 
-      <!-- Panel de controles -->
-      <a-entity position="0 1.5 -2">
-        <a-plane width="3.0" height="0.4" color="#222" material="opacity:0.8"></a-plane>
-        <!-- Play/Pause vídeo -->
+      <!-- Panel de controles + Salir -->
+      <a-entity position="0 6 -2">
+        <a-plane width="2.4" height="0.4" color="#222" material="opacity:0.8"></a-plane>
         <a-entity
           id="btnPlay"
           class="interactive"
-          geometry="primitive:plane; width:0.4; height:0.2"
-          material="color:#0A74DA"
-          text="value:Play; align:center; color:#FFF"
-          position="-1.1 0 0.01"
+          geometry="primitive: plane; width: 0.4; height: 0.2"
+          material="color: #0A74DA"
+          text="value: Play; align: center; width: 1.5; color: #FFF"
+          position="-1.0 0 0.01"
         ></a-entity>
-        <!-- Volumen vídeo –/+ -->
         <a-entity
           id="btnVolDown"
           class="interactive"
-          geometry="primitive:plane; width:0.2; height:0.2"
-          material="color:#555"
-          text="value:-; align:center; color:#FFF"
-          position="-0.6 0 0.01"
+          geometry="primitive: plane; width: 0.2; height: 0.2"
+          material="color: #555"
+          text="value: -; align: center; width: 0.5; color: #FFF"
+          position="-0.4 0 0.01"
         ></a-entity>
         <a-entity
           id="volText"
-          text="value:Vol:100%; align:center; color:#FFF"
-          position="0 0 0.01"
+          text="value: Vol: 100%; align: center; width: 1.2; color: #FFF"
+          position="0.4 0 0.01"
         ></a-entity>
         <a-entity
           id="btnVolUp"
           class="interactive"
-          geometry="primitive:plane; width:0.2; height:0.2"
-          material="color:#555"
-          text="value:+; align:center; color:#FFF"
-          position="0.6 0 0.01"
+          geometry="primitive: plane; width: 0.2; height: 0.2"
+          material="color: #555"
+          text="value: +; align: center; width: 0.5; color: #FFF"
+          position="0.8 0 0.01"
         ></a-entity>
-        <!-- Audio ambiente on/off -->
+        <a-entity
+          id="btnExit"
+          class="interactive"
+          geometry="primitive: plane; width: 0.3; height: 0.2"
+          material="color: #DA0A0A; opacity: 0.8"
+          text="value: Salir; align: center; width: 1; color: #FFF"
+          position="1.3 0 0.01"
+        ></a-entity>
         <a-entity
           id="btnCrowd"
           class="interactive"
           geometry="primitive:plane; width:0.4; height:0.2"
           material="color:#0A74DA"
-          text="value:Crowd:On; align:center; color:#FFF"
+          text="value:Crowd:On; align:center; width:1.5; color:#FFF"
           position="1.1 0 0.01"
-        ></a-entity>
-        <!-- Salir VR -->
-        <a-entity
-          id="btnExit"
-          class="interactive"
-          geometry="primitive:plane; width:0.3; height:0.2"
-          material="color:#DA0A0A; opacity:0.8"
-          text="value:Salir; align:center; color:#FFF"
-          position="1.7 0 0.01"
         ></a-entity>
       </a-entity>
 
-      <!-- Iluminación -->
-      <a-entity light="type:ambient; intensity:0.5; color:#fff"></a-entity>
+      <!-- Iluminación ajustada -->
+      <!-- Luz ambiental suave -->
+      <a-entity light="type: ambient; intensity: 0.5; color: #ffffff"></a-entity>
+      <!-- Luz direccional como “sol” -->
       <a-entity
-        light="type:directional; intensity:0.8; color:#fff"
+        light="type: directional; intensity: 0.8; color: #ffffff"
         position="1 2 1"
         rotation="-45 45 0"
       ></a-entity>
+      <!-- Punto de luz para resaltar -->
       <a-entity
-        light="type:point; intensity:1.2; distance:10; decay:2; color:#ffeedd"
+        light="type: point; intensity: 1.2; distance: 10; decay: 2; color: #ffeedd"
         position="0 3 -5"
       ></a-entity>
     </a-scene>
 
     <script>
-      // --- Audio ambiente controlado ---
+      // --- STREAM EN VIVO HLS (Al Jazeera 24/7) ---
+      var video = document.getElementById('videoLive');
+   // ---   var videoSrc = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8'; ---
+// -- var videoSrc = 'https://cdn3.wowza.com/5/ZWQ1K2NYTmpFbGsr/BEK-WOWZA-1/smil:BEKPRIMEW.smil/playlist.m3u8';
+      var videoSrc = 'https://cdn.igocast.com/wkrp_channel1_hls/wkrp_channel1_master.m3u8';
+      
+
+
+
+      if (Hls.isSupported()) {
+        var hls = new Hls();
+        hls.loadSource(videoSrc);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.muted = false;
+          video.volume = 1.0;
+          video.play();
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = videoSrc;
+        video.muted = false;
+        video.volume = 1.0;
+        video.addEventListener('loadedmetadata', function () {
+          video.play();
+        });
+      }
+// --- AUDIO AMBIENTE ---
       var crowdAudio = document.getElementById('crowdAudio');
       var btnCrowd = document.getElementById('btnCrowd');
       var crowdOn = true;
@@ -174,7 +205,6 @@
       document.body.addEventListener(
         'click',
         function () {
-          crowdAudio.volume = 0.5;
           crowdAudio.play().catch(() => {});
         },
         { once: true }
@@ -188,15 +218,59 @@
       btnCrowd.addEventListener('click', function () {
         crowdOn = !crowdOn;
         crowdAudio.muted = !crowdOn;
-        this.setAttribute('text', 'value', crowdOn ? 'Crowd:On' : 'Crowd:Off');
+        this.setAttribute('text', 'value', crowdOn ? 'Crowd: On' : 'Crowd: Off');
+      });
+      
+      // --- CONTROLES 3D ---
+      var btnPlay = document.getElementById('btnPlay');
+      var btnVolUp = document.getElementById('btnVolUp');
+      var btnVolDown = document.getElementById('btnVolDown');
+      var volText = document.getElementById('volText');
+      var btnExit = document.getElementById('btnExit');
+
+      function updateVolText() {
+        volText.setAttribute('text', 'value', 'Vol: ' + Math.round(video.volume * 100) + '%');
+      }
+
+      btnPlay.addEventListener('click', function () {
+        if (video.paused) {
+          video.play();
+          this.setAttribute('text', 'value', 'Pause');
+        } else {
+          video.pause();
+          this.setAttribute('text', 'value', 'Play');
+        }
       });
 
-      // --- Funciones de vídeo si lo necesitas… ---
+      btnVolUp.addEventListener('click', function () {
+        video.volume = Math.min(1, video.volume + 0.1);
+        updateVolText();
+      });
 
-      // --- Salir de VR ---
-      document.getElementById('btnExit').addEventListener('click', function () {
+      btnVolDown.addEventListener('click', function () {
+        video.volume = Math.max(0, video.volume - 0.1);
+        updateVolText();
+      });
+
+      // --- MOSTRAR/OCULTAR VÍDEO 2D AL ENTRAR/SALIR DE VR ---
+      var sceneEl = document.querySelector('a-scene');
+
+      sceneEl.addEventListener('enter-vr', function () {
+        video.classList.add('hidden');
+        video.controls = false;
+      });
+
+      sceneEl.addEventListener('exit-vr', function () {
+        video.classList.remove('hidden');
+        video.controls = true;
+      });
+
+      // --- BOTÓN SALIR VR ---
+      btnExit.addEventListener('click', function () {
         var scene = document.querySelector('a-scene');
-        scene.exitVR && scene.exitVR();
+        if (scene.exitVR) {
+          scene.exitVR();
+        }
       });
     </script>
   </body>
