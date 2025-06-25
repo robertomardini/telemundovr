@@ -192,14 +192,14 @@
 // --- AUDIO AMBIENTE ---
       var crowdAudio = document.getElementById('crowdAudio');
       var btnCrowd = document.getElementById('btnCrowd');
-      var crowdOn = true;
+      var crowdOn = false;
       // Iniciar audio en primer click del usuario
       document.body.addEventListener(
         'click',
         function () {
           crowdAudio.play().catch(() => {});
         },
-        { once: false }
+        { once: true }
       );
       // Reanudar al entrar en VR
       document
