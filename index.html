@@ -53,7 +53,7 @@
       crossorigin="anonymous"
     ></video>
 <!-- Audio ambiente (sin autoplay directo) -->
-    <audio id="crowdAudio" src="Crowd_Sound.mp3" loop crossorigin="anonymous"></audio>
+    <audio id="crowdAudio" src="-Crowd_Sound.mp3-" loop crossorigin="anonymous"></audio>
     
     <a-scene vr-mode-ui="enabled: true" embedded>
       <!-- Assets: tu modelo glTF y otros -->
@@ -192,14 +192,14 @@
 // --- AUDIO AMBIENTE ---
       var crowdAudio = document.getElementById('crowdAudio');
       var btnCrowd = document.getElementById('btnCrowd');
-      var crowdOn = false;
+      var crowdOn = true;
       // Iniciar audio en primer click del usuario
       document.body.addEventListener(
         'click',
         function () {
           crowdAudio.play().catch(() => {});
         },
-        { once: false }
+        { once: true }
       );
       // Reanudar al entrar en VR
       document
