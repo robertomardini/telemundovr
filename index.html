@@ -8,8 +8,8 @@
       content="Estadio VR con HLS en vivo, panel 3D de controles, vídeo 2D tras VR y modelo 3D scifi-garage.glb centrado con iluminación"
     />
     <!-- A-Frame -->
-   <!-- <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script> -->
-    <script src="https://unpkg.com/aframe-iframe-component@3.0.2/dist/aframe-iframe-component.min.js"></script>
+   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
 
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -84,13 +84,8 @@
       ></a-entity>
 
       <!-- Pantalla de vídeo VR -->
-      <!-- <a-video src="#videoLive" width="50" height="30" position="-10 31 -50"></a-video> -->
+      <a-video src="#videoLive" width="50" height="30" position="-10 31 -50"></a-video>
       
-      <a-entity
-  iframe="src: https://www.telemundo.com/noticias-live; width: 50; height: 30"
-  position="-10 31 -50"
-  geometry="primitive: plane; width: 50; height: 30">
-</a-entity>
 
       <!-- Gradas -->
       <a-cylinder
