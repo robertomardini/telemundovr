@@ -2,17 +2,41 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con YouTube Incrustado</title>
+    <title>Ver en VR – YouTube en A-Frame</title>
     <meta
       name="description"
-      content="Estadio VR con modelo 3D centrado, iluminación ajustada y vídeo en vivo de YouTube dentro de la escena"
+      content="Botón para entrar en VR y reproducir un vídeo de YouTube dentro de un entorno A-Frame"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- Componente iframe para A-Frame -->
+    <!-- Componente iframe para incrustar páginas web -->
     <script src="https://unpkg.com/aframe-iframe-component@3.0.2/dist/aframe-iframe-component.min.js"></script>
     <style>
-      /* Botones VR / pantalla completa */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      /* Botón centrado */
+      #startBtn {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 1em 2em;
+        font-size: 1.2em;
+        cursor: pointer;
+      }
+      /* Contenedor de la escena VR, oculto inicialmente */
+      #vrContainer {
+        display: none;
+        width: 100%;
+        height: 100%;
+      }
+      /* Ajuste de los botones VR / fullscreen */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
@@ -30,122 +54,43 @@
     </style>
   </head>
   <body>
-    <!-- Audio ambiente -->
-    <audio id="crowdAudio" src="Crowd_Sound.mp3" loop crossorigin="anonymous"></audio>
+    <!-- Botón para activar VR -->
+    <button id="startBtn">Ver en VR</button>
 
-    <!-- Escena A-Frame -->
-    <!-- Quitamos embedded para que aparezca siempre el botón VR -->
-    <a-scene vr-mode-ui="enabled: true">
-      <a-assets>
-        <!-- Modelo 3D -->
-        <a-asset-item id="futbolModel" src="futbol_studio.glb"></a-asset-item>
-      </a-assets>
+    <!-- Aquí se carga la escena A-Frame -->
+    <div id="vrContainer">
+      <a-scene vr-mode-ui="enabled: true">
+        <!-- Cámara con cursor y controllers para VR -->
+        <a-entity camera look-controls>
+          <a-cursor
+            fuse="false"
+            raycaster="objects: .interactive"
+          ></a-cursor>
+          <a-entity
+            laser-controls="hand: left"
+            raycaster="objects: .interactive"
+          ></a-entity>
+          <a-entity
+            laser-controls="hand: right"
+            raycaster="objects: .interactive"
+          ></a-entity>
+        </a-entity>
 
-      <!-- Rig con cámara y controllers -->
-      <a-entity id="rig" position="0 1.6 0">
-        <a-camera wasd-controls-enabled="false"></a-camera>
-        <a-entity laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
-        <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
-      </a-entity>
-
-      <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="100" height="100" color="#2e2e2e"></a-plane>
-
-      <!-- Modelo 3D centrado -->
-      <a-entity
-        id="futbolStudio"
-        gltf-model="#futbolModel"
-        position="0 0 -5"
-        rotation="0 180 0"
-        scale="1 1 1"
-      ></a-entity>
-
-      <!-- Pantalla con YouTube embed -->
-      <a-entity
-        iframe="src: https://www.youtube.com/embed/0zMi6kHo19o?autoplay=1; width: 50; height: 30"
-        geometry="primitive: plane; width: 50; height: 30"
-        position="-10 31 -50"
-      ></a-entity>
-
-      <!-- Gradas -->
-      <a-cylinder
-        position="0 10 -10"
-        radius="80"
-        height="100"
-        color="#444"
-        side="double"
-        segments-radial="64"
-        open-ended="true"
-        theta-length="360"
-      ></a-cylinder>
-
-      <!-- Panel de controles + Salir + Crowd -->
-      <a-entity position="0 6 -2">
-        <a-plane width="3.2" height="0.4" color="#222" material="opacity:0.8"></a-plane>
-        <!-- Audio ambiente On/Off -->
+        <!-- Plano con el reproductor de YouTube incrustado -->
         <a-entity
-          id="btnCrowd"
           class="interactive"
-          geometry="primitive: plane; width: 0.6; height: 0.2"
-          material="color: #0A74DA"
-          text="value: Crowd: On; align: center; width: 1.5; color: #FFF"
-          position="-1.4 0 0.01"
+          iframe="src: https://www.youtube.com/embed/0zMi6kHo19o?autoplay=0; width:16; height:9"
+          geometry="primitive: plane; width:16; height:9"
+          position="0 2 -4"
         ></a-entity>
-        <!-- Salir VR -->
-        <a-entity
-          id="btnExit"
-          class="interactive"
-          geometry="primitive: plane; width: 0.4; height: 0.2"
-          material="color: #DA0A0A; opacity: 0.8"
-          text="value: Salir; align: center; width: 1; color: #FFF"
-          position="1.4 0 0.01"
-        ></a-entity>
-      </a-entity>
-
-      <!-- Iluminación -->
-      <a-entity light="type: ambient; intensity: 0.5; color: #ffffff"></a-entity>
-      <a-entity
-        light="type: directional; intensity: 0.8; color: #ffffff"
-        position="1 2 1"
-        rotation="-45 45 0"
-      ></a-entity>
-      <a-entity
-        light="type: point; intensity: 1.2; distance: 10; decay: 2; color: #ffeedd"
-        position="0 3 -5"
-      ></a-entity>
-    </a-scene>
+      </a-scene>
+    </div>
 
     <script>
-      // --- Audio ambiente controlado ---
-      var crowdAudio = document.getElementById('crowdAudio');
-      var btnCrowd = document.getElementById('btnCrowd');
-      var crowdOn = true;
-      // Inicia audio tras primer clic del usuario (política de autoplay)
-      document.body.addEventListener(
-        'click',
-        function () {
-          crowdAudio.volume = 0.5;
-          crowdAudio.play().catch(() => {});
-        },
-        { once: true }
-      );
-      // Reanuda audio al entrar en VR
-      document
-        .querySelector('a-scene')
-        .addEventListener('enter-vr', function () {
-          crowdAudio.play().catch(() => {});
-        });
-      // Alterna audio ambiente
-      btnCrowd.addEventListener('click', function () {
-        crowdOn = !crowdOn;
-        crowdAudio.muted = !crowdOn;
-        this.setAttribute('text', 'value', crowdOn ? 'Crowd: On' : 'Crowd: Off');
-      });
-
-      // --- Botón Salir VR ---
-      document.getElementById('btnExit').addEventListener('click', function () {
-        var scene = document.querySelector('a-scene');
-        scene.exitVR && scene.exitVR();
+      // Mostrar la escena VR al pulsar el botón
+      document.getElementById('startBtn').addEventListener('click', function () {
+        this.style.display = 'none';
+        document.getElementById('vrContainer').style.display = 'block';
       });
     </script>
   </body>
