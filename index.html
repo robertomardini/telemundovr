@@ -5,56 +5,40 @@
     <title>Estadio VR con YouTube Directo</title>
     <meta
       name="description"
-      content="Escena VR con reproductor de YouTube incrustado sin botón previo"
+      content="Escena VR con reproductor de YouTube incrustado sin mira central y con ratón habilitado"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- Componente iframe para A-Frame -->
     <script src="https://unpkg.com/aframe-iframe-component@3.0.2/dist/aframe-iframe-component.min.js"></script>
     <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
+      html, body {
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
       }
-      /* Posicionamiento de los botones VR / pantalla completa */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
         bottom: env(safe-area-inset-bottom, 20px) !important;
-        width: 40px !important;
-        height: 40px !important;
-        z-index: 9999 !important;
+        width: 40px !important; height: 40px !important; z-index: 9999 !important;
       }
-      .a-enter-vr-button {
-        left: calc(50% - 30px) !important;
-      }
-      .a-fullscreen-button {
-        left: calc(50% + 10px) !important;
-      }
+      .a-enter-vr-button { left: calc(50% - 30px) !important; }
+      .a-fullscreen-button { left: calc(50% + 10px) !important; }
     </style>
   </head>
   <body>
     <a-scene vr-mode-ui="enabled: true">
-      <!-- Cámara con cursor y controllers VR -->
-      <a-entity camera look-controls>
-        <a-cursor fuse="false" raycaster="objects: .interactive"></a-cursor>
-        <a-entity laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
-        <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
-      </a-entity>
+      <!-- Cámara sin pointer lock para permitir clicks de ratón -->
+      <a-entity camera look-controls="pointerLockEnabled: false"></a-entity>
 
-      <!-- Suelo básico (opcional) -->
+      <!-- Suelo opcional -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#222"></a-plane>
 
-      <!-- Reproductor de YouTube incrustado -->
+      <!-- Reproductor de YouTube incrustado, más alejado (Z = -6) -->
       <a-entity
         class="interactive"
         iframe="src: https://www.youtube.com/embed/0zMi6kHo19o; width:16; height:9"
         geometry="primitive: plane; width:16; height:9"
-        position="0 2 -4"
+        position="0 2 -6"
       ></a-entity>
     </a-scene>
   </body>
