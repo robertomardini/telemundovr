@@ -2,10 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con YouTube Directo</title>
+    <title>Estadio VR con YouTube y Controles VR</title>
     <meta
       name="description"
-      content="Escena VR con reproductor de YouTube incrustado sin mira central y con ratón habilitado"
+      content="Escena VR con reproductor de YouTube incrustado y controladores VR activos"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -27,13 +27,25 @@
   </head>
   <body>
     <a-scene vr-mode-ui="enabled: true">
-      <!-- Cámara sin pointer lock para permitir clicks de ratón -->
-      <a-entity camera look-controls="pointerLockEnabled: false"></a-entity>
+      <!-- Rig: cámara + controladores VR -->
+      <a-entity id="rig" position="0 1.6 0">
+        <a-camera look-controls="pointerLockEnabled: false"></a-camera>
+        <!-- Controlador izquierdo -->
+        <a-entity
+          laser-controls="hand: left"
+          raycaster="objects: .interactive"
+        ></a-entity>
+        <!-- Controlador derecho -->
+        <a-entity
+          laser-controls="hand: right"
+          raycaster="objects: .interactive"
+        ></a-entity>
+      </a-entity>
 
-      <!-- Suelo opcional -->
+      <!-- Suelo -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#222"></a-plane>
 
-      <!-- Reproductor de YouTube incrustado, más alejado (Z = -6) -->
+      <!-- YouTube incrustado con clase .interactive para raycaster -->
       <a-entity
         class="interactive"
         iframe="src: https://www.youtube.com/embed/0zMi6kHo19o; width:16; height:9"
