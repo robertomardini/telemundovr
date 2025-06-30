@@ -2,10 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Selector de Canales y Scroll VR</title>
+    <title>Estadio VR con Scroll de Canal Enfocado</title>
     <meta
       name="description"
-      content="Escena VR con HLS en vivo, lista de canales scrollable dentro del entorno VR usando thumbstick"
+      content="Escena VR con HLS en vivo, lista de canales scrollable dentro del entorno VR usando thumbstick solo al enfocar"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -13,19 +13,13 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
       html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
       }
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
         bottom: env(safe-area-inset-bottom,20px) !important;
-        width: 40px !important;
-        height: 40px !important;
-        z-index: 9999 !important;
+        width: 40px !important; height: 40px !important; z-index: 9999 !important;
       }
       .a-enter-vr-button { left: calc(50% - 30px) !important; }
       .a-fullscreen-button { left: calc(50% + 10px) !important; }
@@ -36,7 +30,7 @@
     <video id="videoLive" playsinline webkit-playsinline crossorigin="anonymous" style="display:none"></video>
 
     <a-scene vr-mode-ui="enabled: true">
-      <!-- Rig con cámara y controladores VR -->
+      <!-- Rig -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera look-controls="pointerLockEnabled: false"></a-camera>
         <a-entity id="leftCtrl" laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
@@ -52,10 +46,10 @@
         class="interactive"
         src="#videoLive"
         width="16" height="9"
-        position="0 6 -6"
+        position="0 2 -6"
       ></a-video>
 
-      <!-- Panel de controles 3D bajo la pantalla -->
+      <!-- Controles 3D -->
       <a-entity position="0 0.5 -4">
         <a-plane width="4" height="0.6" color="#000" material="opacity:0.6"></a-plane>
         <a-entity
@@ -89,12 +83,16 @@
         ></a-entity>
       </a-entity>
 
-      <!-- Panel de canales en VR, a la derecha -->
-      <a-entity position="10 2 -6">
-        <!-- Fondo semitransparente -->
-        <a-plane width="4" height="6" color="#000" material="opacity:0.6"></a-plane>
-
-        <!-- Botón scroll arriba -->
+      <!-- Panel de canales -->
+      <a-entity id="channelPanelContainer" position="10 2 -6">
+        <!-- Fondo clicable para focus -->
+        <a-plane id="channelPanelBg"
+                 class="interactive"
+                 width="4" height="6"
+                 color="#000"
+                 material="opacity:0.6">
+        </a-plane>
+        <!-- Scroll arriba -->
         <a-entity
           id="btnScrollUp"
           class="interactive"
@@ -102,11 +100,9 @@
           material="color:#FFF"
           position="0 2.8 0.01"
         ></a-entity>
-
-        <!-- Contenedor dinámico de filas -->
+        <!-- Contenedor dinámico -->
         <a-entity id="channelPanel" position="0 2.4 0.01"></a-entity>
-
-        <!-- Botón scroll abajo -->
+        <!-- Scroll abajo -->
         <a-entity
           id="btnScrollDown"
           class="interactive"
@@ -119,7 +115,7 @@
     </a-scene>
 
     <script>
-      // --- HLS y cambio de canal ---
+      // HLS y canal por defecto
       const video = document.getElementById('videoLive');
       let hlsInstance;
       function setChannel(src) {
@@ -129,15 +125,14 @@
           hlsInstance.loadSource(src);
           hlsInstance.attachMedia(video);
           hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        } else {
           video.src = src;
           video.addEventListener('loadedmetadata', () => video.play());
         }
       }
-      // Canal por defecto
       setChannel('https://live-hls-web-aje.getaj.net/AJE/index.m3u8');
 
-      // --- Lista de canales desde CSV de Google Sheets ---
+      // Carga canales CSV
       const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-V95W0rAxsZAHLKcbqEUftycPrkGPY7-2A_d7M6TP92Mx8w1pUzaP1SQHkMuEQJt6jzAwXtrPa31I/pub?output=csv';
       let channels = [], offset = 0, visibleCount = 6;
       const panel = document.getElementById('channelPanel');
@@ -145,79 +140,78 @@
       function renderChannels() {
         panel.innerHTML = '';
         channels.slice(offset, offset + visibleCount)
-          .forEach((ch, i) => {
+          .forEach((ch,i) => {
             const row = document.createElement('a-entity');
-            row.setAttribute('position', `0 ${-i * 0.8} 0`);
-            // fondo clicable
+            row.setAttribute('position', `0 ${-i*0.8} 0`);
+            // fondo invisible clicable
             const bg = document.createElement('a-plane');
-            bg.setAttribute('width', '3.8');
-            bg.setAttribute('height', '0.7');
-            bg.setAttribute('material', 'opacity:0;');
-            bg.setAttribute('class', 'interactive');
+            bg.setAttribute('width','3.8');
+            bg.setAttribute('height','0.7');
+            bg.setAttribute('material','opacity:0;');
+            bg.setAttribute('class','interactive');
             row.appendChild(bg);
             // icono
             const icon = document.createElement('a-plane');
-            icon.setAttribute('src', ch.icon);
-            icon.setAttribute('width', '0.6');
-            icon.setAttribute('height', '0.6');
-            icon.setAttribute('position', '-1 0 0.01');
+            icon.setAttribute('src',ch.icon);
+            icon.setAttribute('width','0.6');
+            icon.setAttribute('height','0.6');
+            icon.setAttribute('position','-1 0 0.01');
             row.appendChild(icon);
-            // nombre
+            // texto
             const txt = document.createElement('a-entity');
-            txt.setAttribute('text', `value: ${ch.name}; color: #FFF; width: 2.5`);
-            txt.setAttribute('position', '-0.2 0 0.01');
+            txt.setAttribute('text',`value: ${ch.name}; color:#FFF; width:2.5`);
+            txt.setAttribute('position','-0.2 0 0.01');
             row.appendChild(txt);
-            bg.addEventListener('click', () => setChannel(ch.src));
+            bg.addEventListener('click',()=> setChannel(ch.src));
             panel.appendChild(row);
           });
       }
 
       fetch(csvUrl)
-        .then(r => r.text())
-        .then(text => {
+        .then(r=>r.text())
+        .then(text=>{
           channels = text.trim().split('\n').slice(1)
-            .map(line => {
-              const [icon, name, src] = line.split(',');
-              return { icon, name, src };
+            .map(line=>{
+              const [icon,name,src]=line.split(',');
+              return {icon,name,src};
             });
           renderChannels();
-        })
-        .catch(console.error);
+        });
 
       // Scroll con botones
-      document.getElementById('btnScrollUp')
-        .addEventListener('click', () => {
-          offset = Math.max(0, offset - 1);
-          renderChannels();
-        });
-      document.getElementById('btnScrollDown')
-        .addEventListener('click', () => {
-          offset = Math.min(channels.length - visibleCount, offset + 1);
-          renderChannels();
-        });
+      document.getElementById('btnScrollUp').addEventListener('click',()=>{
+        offset = Math.max(0,offset-1); renderChannels();
+      });
+      document.getElementById('btnScrollDown').addEventListener('click',()=>{
+        offset = Math.min(channels.length-visibleCount,offset+1); renderChannels();
+      });
 
-      // Scroll con thumbstick VR
+      // Scroll con thumbstick solo al enfocar panel
+      let panelFocused = false;
+      document.getElementById('channelPanelBg')
+        .addEventListener('mouseenter', ()=> panelFocused = true);
+      document.getElementById('channelPanelBg')
+        .addEventListener('mouseleave', ()=> panelFocused = false);
+
       const DEAD_ZONE = 0.5;
       let canScroll = true;
       function handleAxis(e) {
+        if (!panelFocused || !canScroll) return;
         const y = e.detail.axes[1];
-        if (!canScroll) return;
         if (y > DEAD_ZONE) {
-          offset = Math.min(channels.length - visibleCount, offset + 1);
+          offset = Math.min(channels.length-visibleCount,offset+1);
           renderChannels();
-          canScroll = false;
-          setTimeout(() => canScroll = true, 300);
+          canScroll=false;
+          setTimeout(()=>canScroll=true,300);
         } else if (y < -DEAD_ZONE) {
-          offset = Math.max(0, offset - 1);
+          offset = Math.max(0,offset-1);
           renderChannels();
-          canScroll = false;
-          setTimeout(() => canScroll = true, 300);
+          canScroll=false;
+          setTimeout(()=>canScroll=true,300);
         }
       }
-      document.getElementById('leftCtrl')
-        .addEventListener('axismove', handleAxis);
-      document.getElementById('rightCtrl')
-        .addEventListener('axismove', handleAxis);
+      document.getElementById('leftCtrl').addEventListener('axismove',handleAxis);
+      document.getElementById('rightCtrl').addEventListener('axismove',handleAxis);
 
       // Controles de vídeo
       const btnPlay = document.getElementById('btnPlay');
@@ -225,27 +219,15 @@
       const btnVolDown = document.getElementById('btnVolDown');
       const volText = document.getElementById('volText');
       function updateVol() {
-        volText.setAttribute('text', 'value', Math.round(video.volume * 100) + '%');
+        volText.setAttribute('text','value',Math.round(video.volume*100)+'%');
       }
-      btnPlay.addEventListener('click', () => {
-        if (video.paused) {
-          video.play();
-          btnPlay.setAttribute('text', 'value', 'Pause');
-        } else {
-          video.pause();
-          btnPlay.setAttribute('text', 'value', 'Play');
-        }
+      btnPlay.addEventListener('click',()=>{
+        if(video.paused){ video.play(); btnPlay.setAttribute('text','value','Pause'); }
+        else{ video.pause(); btnPlay.setAttribute('text','value','Play'); }
       });
-      btnVolUp.addEventListener('click', () => {
-        video.volume = Math.min(1, video.volume + 0.1);
-        updateVol();
-      });
-      btnVolDown.addEventListener('click', () => {
-        video.volume = Math.max(0, video.volume - 0.1);
-        updateVol();
-      });
-      video.volume = 1;
-      updateVol();
+      btnVolUp.addEventListener('click',()=>{ video.volume = Math.min(1,video.volume+0.1); updateVol(); });
+      btnVolDown.addEventListener('click',()=>{ video.volume = Math.max(0,video.volume-0.1); updateVol(); });
+      video.volume = 1; updateVol();
     </script>
   </body>
 </html>
