@@ -2,10 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Selector de Canales</title>
+    <title>Estadio VR con Selector Dinámico de Canales</title>
     <meta
       name="description"
-      content="Escena VR con HLS en vivo y lista de canales dinámica desde Google Sheets"
+      content="Escena VR con HLS en vivo y lista de canales cargada desde Google Sheets"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -18,49 +18,39 @@
       /* Panel de canales a la derecha */
       #channelList {
         position: absolute;
-        top: 0;
-        right: 0;
-        width: 220px;
-        height: 100%;
-        background: rgba(0,0,0,0.6);
+        top: 0; right: 0;
+        width: 220px; height: 100%;
+        background: rgba(0,0,0,0.7);
         color: #fff;
         overflow-y: auto;
         z-index: 10000;
-        padding: 10px;
-        box-sizing: border-box;
+        padding: 10px; box-sizing: border-box;
       }
       #channelList h2 {
-        margin: 0 0 10px;
-        font-size: 1.2em;
-        text-align: center;
+        margin: 0 0 10px; font-size: 1.2em; text-align: center;
       }
       #channelList ul {
-        list-style: none;
-        margin: 0; padding: 0;
+        list-style: none; padding: 0; margin: 0;
       }
       #channelList li {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-        cursor: pointer;
-      }
-      #channelList li img {
-        width: 32px; height: 32px;
-        margin-right: 8px;
-        border-radius: 4px;
-      }
-      #channelList li span {
-        flex: 1;
+        display: flex; align-items: center;
+        padding: 5px; margin-bottom: 5px;
+        cursor: pointer; border-radius: 4px;
       }
       #channelList li:hover {
         background: rgba(255,255,255,0.1);
+      }
+      #channelList img {
+        width: 32px; height: 32px; margin-right: 8px;
+        object-fit: cover; border-radius: 4px;
       }
       /* Botones VR / fullscreen */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
         bottom: env(safe-area-inset-bottom,20px) !important;
-        width: 40px !important; height: 40px !important; z-index: 9999 !important;
+        width: 40px !important; height: 40px !important;
+        z-index: 9999 !important;
       }
       .a-enter-vr-button { left: calc(50% - 30px) !important; }
       .a-fullscreen-button { left: calc(50% + 10px) !important; }
@@ -70,12 +60,10 @@
     <!-- Panel de canales -->
     <div id="channelList">
       <h2>Canales</h2>
-      <ul id="channels">
-        <!-- aquí se inyectan los canales -->
-      </ul>
+      <ul id="channels"></ul>
     </div>
 
-    <!-- Vídeo oculto que alimenta la textura 3D -->
+    <!-- Vídeo oculto para textura -->
     <video
       id="videoLive"
       playsinline webkit-playsinline crossorigin="anonymous"
@@ -101,17 +89,16 @@
         width="16" height="9"
         position="0 2 -6"
       ></a-video>
-
-      <!-- Panel de controles simple (opcional) -->
-      <!-- ... -->
     </a-scene>
 
     <script>
-      // 1) Inicializar HLS.js
+      // 1) Función para cambiar el canal
       const video = document.getElementById('videoLive');
-      const hls = new Hls();
+      let hls;
       function setChannel(src) {
+        if (hls) { hls.destroy(); }
         if (Hls.isSupported()) {
+          hls = new Hls();
           hls.loadSource(src);
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
@@ -120,30 +107,21 @@
           video.addEventListener('loadedmetadata', () => video.play());
         }
       }
-
       // Inicializamos con un canal por defecto
       setChannel('https://live-hls-web-aje.getaj.net/AJE/index.m3u8');
 
-      // 2) Cargar datos desde Google Sheets
-      // -- Publica tu hoja como JSON usando:
-      //    Archivo > Publicar en la web > Formato JSON
-      //  Reemplaza SPREADSHEET_ID y SHEET_GID según tu configuración.
-      const sheetID = '1Qf_gUJnZqlq_Agb-RYnHXZR-orwgQOX96mKfOvb5SOs';
-      const sheetGID = '0';
-      const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vT-V95W0rAxsZAHLKcbqEUftycPrkGPY7-2A_d7M6TP92Mx8w1pUzaP1SQHkMuEQJt6jzAwXtrPa31I/pub?output=csv`;
-
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          const entries = data.feed.entry;
+      // 2) Cargar lista de canales desde Google Sheets (CSV)
+      const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-V95W0rAxsZAHLKcbqEUftycPrkGPY7-2A_d7M6TP92Mx8w1pUzaP1SQHkMuEQJt6jzAwXtrPa31I/pub?output=csv';
+      fetch(csvUrl)
+        .then(res => res.text())
+        .then(text => {
+          const lines = text.trim().split('\n');
+          const [, ...rows] = lines; // omite encabezado
           const ul = document.getElementById('channels');
-          entries.forEach(e => {
-            // Los campos quedan en e.gsx$icon.$t, e.gsx$name.$t, e.gsx$url.$t
-            const icon = e.gsx$icon.$t;
-            const name = e.gsx$name.$t;
-            const src  = e.gsx$url.$t;
+          rows.forEach(line => {
+            const [icon, name, src] = line.split(',');
             const li = document.createElement('li');
-            li.innerHTML = `<img src="${icon}" alt="${name}"/><span>${name}</span>`;
+            li.innerHTML = `<img src="${icon}" alt="${name}" /><span>${name}</span>`;
             li.addEventListener('click', () => setChannel(src));
             ul.appendChild(li);
           });
