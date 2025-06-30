@@ -2,56 +2,96 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con YouTube y Controles VR</title>
+    <title>Estadio VR con Stream HLS</title>
     <meta
       name="description"
-      content="Escena VR con reproductor de YouTube incrustado y controladores VR activos"
+      content="Escena VR con HLS en vivo de Al Jazeera integrado en A-Frame"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- Componente iframe para A-Frame -->
-    <script src="https://unpkg.com/aframe-iframe-component@3.0.2/dist/aframe-iframe-component.min.js"></script>
+    <!-- HLS.js para reproducir .m3u8 -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
       html, body {
-        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
       }
+      /* Botones VR / pantalla completa */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
         bottom: env(safe-area-inset-bottom, 20px) !important;
-        width: 40px !important; height: 40px !important; z-index: 9999 !important;
+        width: 40px !important;
+        height: 40px !important;
+        z-index: 9999 !important;
       }
       .a-enter-vr-button { left: calc(50% - 30px) !important; }
       .a-fullscreen-button { left: calc(50% + 10px) !important; }
     </style>
   </head>
   <body>
+    <!-- Vídeo oculto que alimenta la textura 3D -->
+    <video
+      id="videoLive"
+      playsinline
+      webkit-playsinline
+      crossorigin="anonymous"
+      style="display: none;"
+    ></video>
+
     <a-scene vr-mode-ui="enabled: true">
-      <!-- Rig: cámara + controladores VR -->
+      <!-- Rig con cámara y controladores VR -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera look-controls="pointerLockEnabled: false"></a-camera>
-        <!-- Controlador izquierdo -->
         <a-entity
           laser-controls="hand: left"
           raycaster="objects: .interactive"
         ></a-entity>
-        <!-- Controlador derecho -->
         <a-entity
           laser-controls="hand: right"
           raycaster="objects: .interactive"
         ></a-entity>
       </a-entity>
 
-      <!-- Suelo -->
-      <a-plane rotation="-90 0 0" width="100" height="100" color="#222"></a-plane>
+      <!-- Suelo para referencia -->
+      <a-plane
+        rotation="-90 0 0"
+        width="100"
+        height="100"
+        color="#333"
+      ></a-plane>
 
-      <!-- YouTube incrustado con clase .interactive para raycaster -->
-      <a-entity
+      <!-- Pantalla de vídeo en plano 16:9 -->
+      <a-video
         class="interactive"
-        iframe="src: https://www.youtube.com/embed/0zMi6kHo19o; width:16; height:9"
-        geometry="primitive: plane; width:16; height:9"
+        src="#videoLive"
+        width="16"
+        height="9"
         position="0 2 -6"
-      ></a-entity>
+      ></a-video>
     </a-scene>
+
+    <script>
+      // URL de tu stream HLS
+      var videoSrc = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8';
+      var video = document.getElementById('videoLive');
+
+      if (Hls.isSupported()) {
+        var hls = new Hls();
+        hls.loadSource(videoSrc);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.play();
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = videoSrc;
+        video.addEventListener('loadedmetadata', function () {
+          video.play();
+        });
+      }
+    </script>
   </body>
 </html>
