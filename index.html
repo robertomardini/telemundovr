@@ -150,21 +150,27 @@
             bg.setAttribute('material','opacity:0;');
             bg.setAttribute('class','interactive');
             row.appendChild(bg);
-            // icono
-            const icon = document.createElement('a-plane');
-            icon.setAttribute('src',ch.icon);
-            icon.setAttribute('width','0.6');
-            icon.setAttribute('height','0.6');
-            icon.setAttribute('position','-1 0 0.01');
-            row.appendChild(icon);
-            // texto
-            const txt = document.createElement('a-entity');
-            txt.setAttribute('text',`value: ${ch.name}; color:#FFF; width:2.5`);
-            txt.setAttribute('position','-0.2 0 0.01');
-            row.appendChild(txt);
-            bg.addEventListener('click',()=> setChannel(ch.src));
-            panel.appendChild(row);
-          });
+           // icono (izquierda)
+      const icon = document.createElement('a-plane');
+      icon.setAttribute('src', ch.icon);
+      icon.setAttribute('width', '0.7');          // un poco más grande
+      icon.setAttribute('height', '0.7');
+      icon.setAttribute('position', '-1.5 0 0.01'); // movido más a la izquierda
+      row.appendChild(icon);
+      // texto (derecha)
+      const txt = document.createElement('a-entity');
+      txt.setAttribute('text', `
+        value: ${ch.name};
+        color: #FFF;
+        width: 3;           // ancho de caja mayor
+        align: left;        // alineado a la izquierda
+        font: mozillavr;    // o cualquier fuente legible
+      `);
+      txt.setAttribute('position', '-0.6 0 0.01'); // a la derecha del icono
+      row.appendChild(txt);
+      bg.addEventListener('click', () => setChannel(ch.src));
+      panel.appendChild(row);
+    });
       }
 
       fetch(csvUrl)
