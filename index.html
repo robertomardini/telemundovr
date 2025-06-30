@@ -2,31 +2,24 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Stream HLS</title>
+    <title>Estadio VR con Controles de Vídeo</title>
     <meta
       name="description"
-      content="Escena VR con HLS en vivo de Al Jazeera integrado en A-Frame"
+      content="Escena VR con flujo HLS y controles 3D in-scene para play/pause y volumen"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- HLS.js para reproducir .m3u8 -->
+    <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
       html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
       }
-      /* Botones VR / pantalla completa */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
         bottom: env(safe-area-inset-bottom, 20px) !important;
-        width: 40px !important;
-        height: 40px !important;
-        z-index: 9999 !important;
+        width: 40px !important; height: 40px !important; z-index: 9999 !important;
       }
       .a-enter-vr-button { left: calc(50% - 30px) !important; }
       .a-fullscreen-button { left: calc(50% + 10px) !important; }
@@ -46,52 +39,107 @@
       <!-- Rig con cámara y controladores VR -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera look-controls="pointerLockEnabled: false"></a-camera>
-        <a-entity
-          laser-controls="hand: left"
-          raycaster="objects: .interactive"
-        ></a-entity>
-        <a-entity
-          laser-controls="hand: right"
-          raycaster="objects: .interactive"
-        ></a-entity>
+        <a-entity laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
+        <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
       </a-entity>
 
-      <!-- Suelo para referencia -->
-      <a-plane
-        rotation="-90 0 0"
-        width="100"
-        height="100"
-        color="#333"
-      ></a-plane>
+      <!-- Suelo opcional -->
+      <a-plane rotation="-90 0 0" width="100" height="100" color="#222"></a-plane>
 
-      <!-- Pantalla de vídeo en plano 16:9 -->
+      <!-- Pantalla de vídeo -->
       <a-video
+        id="screen"
         class="interactive"
         src="#videoLive"
-        width="16"
-        height="9"
-        position="0 8 -6"
+        width="16" height="9"
+        position="0 2 -6"
       ></a-video>
+
+      <!-- Panel de controles 3D -->
+      <a-entity position="0 0.7 -2">
+        <!-- Fondo semi-transparente -->
+        <a-plane width="2" height="0.4" color="#000" material="opacity:0.6"></a-plane>
+        <!-- Botón Play/Pause -->
+        <a-entity
+          id="btnPlay"
+          class="interactive"
+          geometry="primitive: plane; width:0.3; height:0.3"
+          material="color:#0A74DA"
+          text="value: Play; align:center; width:2; color:#FFF"
+          position="-0.7 0 0.01"
+        ></a-entity>
+        <!-- Botón Vol− -->
+        <a-entity
+          id="btnVolDown"
+          class="interactive"
+          geometry="primitive: plane; width:0.25; height:0.25"
+          material="color:#555"
+          text="value:-; align:center; width:1; color:#FFF"
+          position="-0.3 0 0.01"
+        ></a-entity>
+        <!-- Texto de volumen -->
+        <a-entity
+          id="volText"
+          text="value:100%; align:center; width:2; color:#FFF"
+          position="0.1 0 0.01"
+        ></a-entity>
+        <!-- Botón Vol+ -->
+        <a-entity
+          id="btnVolUp"
+          class="interactive"
+          geometry="primitive: plane; width:0.25; height:0.25"
+          material="color:#555"
+          text="value:+; align:center; width:1; color:#FFF"
+          position="0.5 0 0.01"
+        ></a-entity>
+      </a-entity>
     </a-scene>
 
     <script>
-      // URL de tu stream HLS
-      var videoSrc = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8';
+      // Inicializar HLS
       var video = document.getElementById('videoLive');
-
+      var videoSrc = 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8';
       if (Hls.isSupported()) {
         var hls = new Hls();
         hls.loadSource(videoSrc);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          video.play();
-        });
+        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = videoSrc;
-        video.addEventListener('loadedmetadata', function () {
-          video.play();
-        });
+        video.addEventListener('loadedmetadata', () => video.play());
       }
+
+      // Controles 3D
+      var btnPlay = document.getElementById('btnPlay');
+      var btnVolUp = document.getElementById('btnVolUp');
+      var btnVolDown = document.getElementById('btnVolDown');
+      var volText = document.getElementById('volText');
+
+      function updateVolText() {
+        var pct = Math.round(video.volume * 100);
+        volText.setAttribute('text', 'value', pct + '%');
+      }
+
+      btnPlay.addEventListener('click', () => {
+        if (video.paused) {
+          video.play();
+          btnPlay.setAttribute('text', 'value', 'Pause');
+        } else {
+          video.pause();
+          btnPlay.setAttribute('text', 'value', 'Play');
+        }
+      });
+      btnVolUp.addEventListener('click', () => {
+        video.volume = Math.min(1, video.volume + 0.1);
+        updateVolText();
+      });
+      btnVolDown.addEventListener('click', () => {
+        video.volume = Math.max(0, video.volume - 0.1);
+        updateVolText();
+      });
+
+      // Permitir clicks de ratón cuando no haya Pointer Lock
+      document.body.addEventListener('click', () => {}, { once: true });
     </script>
   </body>
 </html>
