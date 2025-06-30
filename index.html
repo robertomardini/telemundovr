@@ -2,10 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Estadio VR con Controles de Vídeo</title>
+    <title>Estadio VR con Selector de Canales</title>
     <meta
       name="description"
-      content="Escena VR con flujo HLS y controles 3D in-scene para play/pause y volumen"
+      content="Escena VR con HLS en vivo y lista de canales dinámica desde Google Sheets"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -15,10 +15,51 @@
       html, body {
         margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
       }
+      /* Panel de canales a la derecha */
+      #channelList {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 220px;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        color: #fff;
+        overflow-y: auto;
+        z-index: 10000;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+      #channelList h2 {
+        margin: 0 0 10px;
+        font-size: 1.2em;
+        text-align: center;
+      }
+      #channelList ul {
+        list-style: none;
+        margin: 0; padding: 0;
+      }
+      #channelList li {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        cursor: pointer;
+      }
+      #channelList li img {
+        width: 32px; height: 32px;
+        margin-right: 8px;
+        border-radius: 4px;
+      }
+      #channelList li span {
+        flex: 1;
+      }
+      #channelList li:hover {
+        background: rgba(255,255,255,0.1);
+      }
+      /* Botones VR / fullscreen */
       .a-enter-vr-button,
       .a-fullscreen-button {
         position: fixed !important;
-        bottom: env(safe-area-inset-bottom, 20px) !important;
+        bottom: env(safe-area-inset-bottom,20px) !important;
         width: 40px !important; height: 40px !important; z-index: 9999 !important;
       }
       .a-enter-vr-button { left: calc(50% - 30px) !important; }
@@ -26,13 +67,19 @@
     </style>
   </head>
   <body>
+    <!-- Panel de canales -->
+    <div id="channelList">
+      <h2>Canales</h2>
+      <ul id="channels">
+        <!-- aquí se inyectan los canales -->
+      </ul>
+    </div>
+
     <!-- Vídeo oculto que alimenta la textura 3D -->
     <video
       id="videoLive"
-      playsinline
-      webkit-playsinline
-      crossorigin="anonymous"
-      style="display: none;"
+      playsinline webkit-playsinline crossorigin="anonymous"
+      style="display:none"
     ></video>
 
     <a-scene vr-mode-ui="enabled: true">
@@ -43,7 +90,7 @@
         <a-entity laser-controls="hand: right" raycaster="objects: .interactive"></a-entity>
       </a-entity>
 
-      <!-- Suelo opcional -->
+      <!-- Suelo -->
       <a-plane rotation="-90 0 0" width="100" height="100" color="#222"></a-plane>
 
       <!-- Pantalla de vídeo -->
@@ -55,91 +102,53 @@
         position="0 2 -6"
       ></a-video>
 
-      <!-- Panel de controles 3D -->
-      <a-entity position="0 0.7 -2">
-        <!-- Fondo semi-transparente -->
-        <a-plane width="2" height="0.4" color="#000" material="opacity:0.6"></a-plane>
-        <!-- Botón Play/Pause -->
-        <a-entity
-          id="btnPlay"
-          class="interactive"
-          geometry="primitive: plane; width:0.3; height:0.3"
-          material="color:#0A74DA"
-          text="value: Play; align:center; width:2; color:#FFF"
-          position="-0.7 0 0.01"
-        ></a-entity>
-        <!-- Botón Vol− -->
-        <a-entity
-          id="btnVolDown"
-          class="interactive"
-          geometry="primitive: plane; width:0.25; height:0.25"
-          material="color:#555"
-          text="value:-; align:center; width:1; color:#FFF"
-          position="-0.3 0 0.01"
-        ></a-entity>
-        <!-- Texto de volumen -->
-        <a-entity
-          id="volText"
-          text="value:100%; align:center; width:2; color:#FFF"
-          position="0.1 0 0.01"
-        ></a-entity>
-        <!-- Botón Vol+ -->
-        <a-entity
-          id="btnVolUp"
-          class="interactive"
-          geometry="primitive: plane; width:0.25; height:0.25"
-          material="color:#555"
-          text="value:+; align:center; width:1; color:#FFF"
-          position="0.5 0 0.01"
-        ></a-entity>
-      </a-entity>
+      <!-- Panel de controles simple (opcional) -->
+      <!-- ... -->
     </a-scene>
 
     <script>
-      // Inicializar HLS
-      var video = document.getElementById('videoLive');
-      var videoSrc = 'https://xumo-xumoent-ch827-uj0ch.fast.nbcuni.com/live/master.m3u8';
-      if (Hls.isSupported()) {
-        var hls = new Hls();
-        hls.loadSource(videoSrc);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = videoSrc;
-        video.addEventListener('loadedmetadata', () => video.play());
-      }
-
-      // Controles 3D
-      var btnPlay = document.getElementById('btnPlay');
-      var btnVolUp = document.getElementById('btnVolUp');
-      var btnVolDown = document.getElementById('btnVolDown');
-      var volText = document.getElementById('volText');
-
-      function updateVolText() {
-        var pct = Math.round(video.volume * 100);
-        volText.setAttribute('text', 'value', pct + '%');
-      }
-
-      btnPlay.addEventListener('click', () => {
-        if (video.paused) {
-          video.play();
-          btnPlay.setAttribute('text', 'value', 'Pause');
-        } else {
-          video.pause();
-          btnPlay.setAttribute('text', 'value', 'Play');
+      // 1) Inicializar HLS.js
+      const video = document.getElementById('videoLive');
+      const hls = new Hls();
+      function setChannel(src) {
+        if (Hls.isSupported()) {
+          hls.loadSource(src);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = src;
+          video.addEventListener('loadedmetadata', () => video.play());
         }
-      });
-      btnVolUp.addEventListener('click', () => {
-        video.volume = Math.min(1, video.volume + 0.1);
-        updateVolText();
-      });
-      btnVolDown.addEventListener('click', () => {
-        video.volume = Math.max(0, video.volume - 0.1);
-        updateVolText();
-      });
+      }
 
-      // Permitir clicks de ratón cuando no haya Pointer Lock
-      document.body.addEventListener('click', () => {}, { once: true });
+      // Inicializamos con un canal por defecto
+      setChannel('https://live-hls-web-aje.getaj.net/AJE/index.m3u8');
+
+      // 2) Cargar datos desde Google Sheets
+      // -- Publica tu hoja como JSON usando:
+      //    Archivo > Publicar en la web > Formato JSON
+      //  Reemplaza SPREADSHEET_ID y SHEET_GID según tu configuración.
+      const sheetID = '1Qf_gUJnZqlq_Agb-RYnHXZR-orwgQOX96mKfOvb5SOs';
+      const sheetGID = '0';
+      const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vT-V95W0rAxsZAHLKcbqEUftycPrkGPY7-2A_d7M6TP92Mx8w1pUzaP1SQHkMuEQJt6jzAwXtrPa31I/pub?output=csv`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          const entries = data.feed.entry;
+          const ul = document.getElementById('channels');
+          entries.forEach(e => {
+            // Los campos quedan en e.gsx$icon.$t, e.gsx$name.$t, e.gsx$url.$t
+            const icon = e.gsx$icon.$t;
+            const name = e.gsx$name.$t;
+            const src  = e.gsx$url.$t;
+            const li = document.createElement('li');
+            li.innerHTML = `<img src="${icon}" alt="${name}"/><span>${name}</span>`;
+            li.addEventListener('click', () => setChannel(src));
+            ul.appendChild(li);
+          });
+        })
+        .catch(err => console.error('Error cargando canales:', err));
     </script>
   </body>
 </html>
