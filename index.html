@@ -138,19 +138,19 @@
       const panel = document.getElementById('channelPanel');
 
       function renderChannels() {
-        panel.innerHTML = '';
-        channels.slice(offset, offset + visibleCount)
-          .forEach((ch,i) => {
-            const row = document.createElement('a-entity');
-            row.setAttribute('position', `0 ${-i*0.8} 0`);
-            // fondo invisible clicable
-            const bg = document.createElement('a-plane');
-            bg.setAttribute('width','3.8');
-            bg.setAttribute('height','0.7');
-            bg.setAttribute('material','opacity:0;');
-            bg.setAttribute('class','interactive');
-            row.appendChild(bg);
-           // icono (izquierda)
+  panel.innerHTML = '';
+  channels.slice(offset, offset + visibleCount)
+    .forEach((ch,i) => {
+      const row = document.createElement('a-entity');
+      row.setAttribute('position', `0 ${-i*0.8} 0`);
+      // fondo clicable
+      const bg = document.createElement('a-plane');
+      bg.setAttribute('width','3.8');
+      bg.setAttribute('height','0.7');
+      bg.setAttribute('material','opacity:0;');
+      bg.setAttribute('class','interactive');
+      row.appendChild(bg);
+      // icono (izquierda)
       const icon = document.createElement('a-plane');
       icon.setAttribute('src', ch.icon);
       icon.setAttribute('width', '0.7');          // un poco más grande
@@ -171,7 +171,8 @@
       bg.addEventListener('click', () => setChannel(ch.src));
       panel.appendChild(row);
     });
-      }
+}
+
 
       fetch(csvUrl)
         .then(r=>r.text())
