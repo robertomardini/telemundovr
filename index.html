@@ -143,37 +143,40 @@
           const item = channels[start + i];
           if (!item) break;
           const col = i % cols, row = Math.floor(i / cols);
-          const x = -1 + col*2;       // columnas en -1 y +1
-          const y = 1.0 - row*1.2;    // filas a 1.0, -0.2, -1.4
-          // entidad contenedora
+          const x = -1 + col * 2;       // columnas en -1 y +1
+          const y = 1.2 - row * 1.8;    // filas a 1.2, -0.6, -3.0
+
           const ent = document.createElement('a-entity');
           ent.setAttribute('position', `${x} ${y} 0`);
+
           // fondo clicable
           const bg = document.createElement('a-plane');
-          bg.setAttribute('width','1.8');
-          bg.setAttribute('height','0.8');
-          bg.setAttribute('material','opacity:0;');
-          bg.setAttribute('class','interactive');
+          bg.setAttribute('width', '1.8');
+          bg.setAttribute('height', '1.6');
+          bg.setAttribute('material', 'opacity:0;');
+          bg.setAttribute('class', 'interactive');
           ent.appendChild(bg);
-          // icono
+
+          // icono arriba
           const icon = document.createElement('a-plane');
           icon.setAttribute('src', item.icon);
-          icon.setAttribute('width','0.6');
-          icon.setAttribute('height','0.6');
-          icon.setAttribute('position','-0.6 0 0.01');
+          icon.setAttribute('width', '0.8');
+          icon.setAttribute('height', '0.8');
+          icon.setAttribute('position', '0 0.4 0.01');
           ent.appendChild(icon);
-          // texto
+
+          // texto abajo
           const txt = document.createElement('a-entity');
           txt.setAttribute('text', `
             value: ${item.name};
             color: #FFF;
-            width: 2;
-            align: left;
+            width: 1.6;
+            align: center;
           `);
-          txt.setAttribute('position','0.1 0 0.01');
+          txt.setAttribute('position', '0 -0.6 0.01');
           ent.appendChild(txt);
-          // click
-          bg.addEventListener('click', ()=> setChannel(item.src));
+
+          bg.addEventListener('click', () => setChannel(item.src));
           grid.appendChild(ent);
         }
       }
