@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Estadio VR 360° con Selector de Canales</title>
+    <meta
+      name="description"
+      content="Escena VR con vídeo 360° de estadio, pantalla flotante HLS y grid scrollable de canales"
+    />
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+      html, body {
+        margin: 0; padding: 0;
+        width: 100%; height: 100%;
+        overflow: hidden;
+      }
+      .a-enter-vr-button, .a-fullscreen-button {
+        position: fixed !important;
+        bottom: env(safe-area-inset-bottom,20px)!important;
+        width: 40px!important; height: 40px!important;
+        z-index: 9999!important;
+      }
+      .a-enter-vr-button { left: calc(50% - 30px)!important; }
+      .a-fullscreen-button { left: calc(50% + 10px)!important; }
+    </style>
+  </head>
+  <body>
+    <!-- Vídeos ocultos para texturas -->
+    <video id="bg360"
+           src="stadium360.mp4"
+           loop muted autoplay playsinline crossorigin="anonymous"
+           style="display:none"></video>
+    <video id="videoLive"
+           playsinline webkit-playsinline crossorigin="anonymous"
+           style="display:none"></video>
+
+    <a-scene vr-mode-ui="enabled: true">
+      <!-- Fondo 360° -->
+      <a-videosphere src="#bg360"></a-videosphere>
+
+      <!-- Rig: cámara y controladores VR -->
+      <a-entity id="rig" position="0 1.6 0">
+        <a-camera look-controls="pointerLockEnabled: false"></a-camera>
+        <a-entity id="leftCtrl"
+                  laser-controls="hand: left"
+                  raycaster="objects: .interactive"></a-entity>
+        <a-entity id="rightCtrl"
+                  laser-controls="hand: right"
+                  raycaster="objects: .interactive"></a-entity>
+      </a-entity>
+
+      <!-- Suelo tenue -->
+      <a-plane rotation="-90 0 0"
+               width="100" height="100"
+               color="#222" material="opacity:0.5">
+      </a-plane>
+
+      <!-- Pantalla flotante con stream HLS -->
+      <a-video id="screen"
+               class="interactive"
+               src="#videoLive"
+               width="10" height="6"
+               position="0 2 -4">
+      </a-video>
+
+      <!-- Controles de vídeo bajo la pantalla -->
+      <a-entity position="0 0.5 -3.5">
+        <a-plane width="4" height="0.6"
+                 color="#000" material="opacity:0.6">
+        </a-plane>
+        <a-entity id="btnPlay" class="interactive"
+                  geometry="primitive: plane; width:0.6; height:0.4"
+                  material="color:#0A74DA"
+                  text="value: Play; align:center; width:2; color:#FFF"
+                  position="-1.4 0 0.01">
+        </a-entity>
+        <a-entity id="btnVolDown" class="interactive"
+                  geometry="primitive: plane; width:0.4; height:0.4"
+                  material="color:#555"
+                  text="value:-; align:center; width:1; color:#FFF"
+                  position="-0.6 0 0.01">
+        </a-entity>
+        <a-entity id="volText"
+                  text="value:100%; align:center; width:1.5; color:#FFF"
+                  position="0.1 0 0.01">
+        </a-entity>
+        <a-entity id="btnVolUp" class="interactive"
+                  geometry="primitive: plane; width:0.4; height:0.4"
+                  material="color:#555"
+                  text="value:+; align:center; width:1; color:#FFF"
+                  position="0.9 0 0.01">
+        </a-entity>
+      </a-entity>
+
+      <!-- Grid de canales (2×3) a la derecha -->
+      <a-entity id="channelContainer" position="7 2 -4">
+        <a-plane id="channelBg"
+                 width="4" height="6"
+                 color="#000" material="opacity:0.6"
+                 class="interactive">
+        </a-plane>
+
+        <!-- Flechas scroll -->
+        <a-entity id="btnScrollUp" class="interactive"
+                  geometry="primitive: triangle;
+                            vertexA:0 0.2 0;
+                            vertexB:-0.2 -0.2 0;
+                            vertexC:0.2 -0.2 0"
+                  material="color:#FFF"
+                  position="0 2.8 0.01">
+        </a-entity>
+        <a-entity id="btnScrollDown" class="interactive"
+                  geometry="primitive: triangle;
+                            vertexA:0 -0.2 0;
+                            vertexB:-0.2 0.2 0;
+                            vertexC:0.2 0.2 0"
+                  material="color:#FFF"
+                  rotation="180 0 0"
+                  position="0 -2.8 0.01">
+        </a-entity>
+
+        <!-- Contenedor del grid -->
+        <a-entity id="channelGrid" position="0 2.4 0.01"></a-entity>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      // 1) Play fondo 360°
+      const bg360 = document.getElementById('bg360');
+      bg360.play().catch(()=>{});
+
+      // 2) HLS para la pantalla flotante
+      const videoLive = document.getElementById('videoLive');
+      let hlsInstance;
+      function setChannel(src) {
+        if (hlsInstance) hlsInstance.destroy();
+        if (Hls.isSupported()) {
+          hlsInstance = new Hls();
+          hlsInstance.loadSource(src);
+          hlsInstance.attachMedia(videoLive);
+          hlsInstance.on(Hls.Events.MANIFEST_PARSED,
+                         () => videoLive.play());
+        } else {
+          videoLive.src = src;
+          videoLive.addEventListener('loadedmetadata',
+            () => videoLive.play());
+        }
+      }
+      setChannel('https://live-hls-web-aje.getaj.net/AJE/index.m3u8');
+
+      // 3) Carga de canales desde Google Sheets (CSV)
+      const csvUrl =
+        'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-V95W0rAxsZAHLKcbqEUftycPrkGPY7-2A_d7M6TP92Mx8w1pUzaP1SQHkMuEQJt6jzAwXtrPa31I/pub?output=csv';
+      let channels = [], offset = 0;
+      const cols = 2, rowsVisible = 3;
+      const grid = document.getElementById('channelGrid');
+
+      function renderGrid() {
+        grid.innerHTML = '';
+        for (let i = 0; i < cols * rowsVisible; i++) {
+          const ch = channels[offset + i];
+          if (!ch) break;
+          const col = i % cols, row = Math.floor(i / cols);
+          const x = -1 + col * 2;
+          const y = 1.2 - row * 1.8;
+          const ent = document.createElement('a-entity');
+          ent.setAttribute('position', `${x} ${y} 0`);
+          // fondo clicable
+          const bg = document.createElement('a-plane');
+          bg.setAttribute('width', '1.8');
+          bg.setAttribute('height', '1.6');
+          bg.setAttribute('material', 'opacity:0;');
+          bg.setAttribute('class', 'interactive');
+          ent.appendChild(bg);
+          // icono
+          const icon = document.createElement('a-plane');
+          icon.setAttribute('src', ch.icon);
+          icon.setAttribute('width', '0.8');
+          icon.setAttribute('height', '0.8');
+          icon.setAttribute('position', '0 0.4 0.01');
+          ent.appendChild(icon);
+          // texto
+          const txt = document.createElement('a-entity');
+          txt.setAttribute('text', `
+            value: ${ch.name};
+            color: #FFF;
+            width: 1.6;
+            align: center;
+          `);
+          txt.setAttribute('position', '0 -0.6 0.01');
+          ent.appendChild(txt);
+          bg.addEventListener('click', () => setChannel(ch.src));
+          grid.appendChild(ent);
+        }
+      }
+
+      // fetch y render inicial
+      fetch(csvUrl)
+        .then(r => r.text())
+        .then(text => {
+          channels = text.trim().split('\n').slice(1)
+            .map(line => {
+              const [icon,name,src] = line.split(',');
+              return { icon, name, src };
+            });
+          renderGrid();
+        });
+
+      // 4) Scroll con botones
+      document.getElementById('btnScrollUp')
+        .addEventListener('click', () => {
+          offset = Math.max(0, offset - cols);
+          renderGrid();
+        });
+      document.getElementById('btnScrollDown')
+        .addEventListener('click', () => {
+          offset = Math.min(
+            channels.length - cols * rowsVisible,
+            offset + cols
+          );
+          renderGrid();
+        });
+
+      // 5) Scroll con thumbstick al enfocar panel
+      let focused = false, okScroll = true;
+      document.getElementById('channelBg')
+        .addEventListener('mouseenter', () => focused = true);
+      document.getElementById('channelBg')
+        .addEventListener('mouseleave', () => focused = false);
+
+      function onAxis(e) {
+        if (!focused || !okScroll) return;
+        const v = e.detail.axes[1];
+        if (v > 0.5) {
+          offset = Math.min(
+            channels.length - cols * rowsVisible,
+            offset + cols
+          );
+          renderGrid();
+          okScroll = false;
+          setTimeout(() => okScroll = true, 300);
+        } else if (v < -0.5) {
+          offset = Math.max(0, offset - cols);
+          renderGrid();
+          okScroll = false;
+          setTimeout(() => okScroll = true, 300);
+        }
+      }
+      document.getElementById('leftCtrl')
+        .addEventListener('axismove', onAxis);
+      document.getElementById('rightCtrl')
+        .addEventListener('axismove', onAxis);
+
+      // 6) Controles de vídeo (play/pause y volumen)
+      const btnPlay   = document.getElementById('btnPlay');
+      const btnVolUp  = document.getElementById('btnVolUp');
+      const btnVolDown= document.getElementById('btnVolDown');
+      const volText   = document.getElementById('volText');
+      function updateVol() {
+        volText.setAttribute('text', 'value', Math.round(videoLive.volume * 100) + '%');
+      }
+      btnPlay.addEventListener('click', () => {
+        if (videoLive.paused) {
+          videoLive.play();
+          btnPlay.setAttribute('text', 'value', 'Pause');
+        } else {
+          videoLive.pause();
+          btnPlay.setAttribute('text', 'value', 'Play');
+        }
+      });
+      btnVolUp.addEventListener('click', () => {
+        videoLive.volume = Math.min(1, videoLive.volume + 0.1);
+        updateVol();
+      });
+      btnVolDown.addEventListener('click', () => {
+        videoLive.volume = Math.max(0, videoLive.volume - 0.1);
+        updateVol();
+      });
+      videoLive.volume = 1;
+      updateVol();
+    </script>
+  </body>
+</html>
