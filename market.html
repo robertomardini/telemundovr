@@ -4,24 +4,30 @@
     <meta charset="utf-8" />
     <title>VR Market with A-Frame and Movement Controls</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- A-Frame Extras para movement-controls y otros componentes -->
+    <!-- A-Frame Extras para movement-controls -->
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
     <a-scene>
-      <!-- Rig para movimiento y controles VR -->
-      <a-entity id="cameraRig" position="0 1.6 0" movement-controls="speed: 0.1">
-        <!-- Cámara con look-controls y desplazamiento WASD -->
-        <a-entity camera look-controls wasd-controls></a-entity>
+      <!-- Rig para movimiento VR -->
+      <a-entity id="cameraRig" movement-controls="speed: 0.1">
+        <!-- Cámara con controls y cursor -->
+        <a-camera id="camera" wasd-controls look-controls position="0 1.6 0">
+          <a-cursor fuse="true" fuseTimeout="500"
+                    geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                    material="color: white; shader: flat">
+          </a-cursor>
+        </a-camera>
 
-        <!-- Cursor de fusión para gaze click en VR -->
-        <a-entity cursor="fuse: true; fuseTimeout: 500" position="0 0 -1"
-                  geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.02"
-                  material="color: white; shader: flat"></a-entity>
-
-        <!-- Laser controls para controladores VR -->
-        <a-entity laser-controls="hand: left" raycaster="objects: .product"></a-entity>
-        <a-entity laser-controls="hand: right" raycaster="objects: .product"></a-entity>
+        <!-- Controles de VR con modelo y rayo visible -->
+        <a-entity laser-controls="hand: left; model: true"
+                  raycaster="objects: .product"
+                  line="color: #118A7E; opacity: 0.75">
+        </a-entity>
+        <a-entity laser-controls="hand: right; model: true"
+                  raycaster="objects: .product"
+                  line="color: #118A7E; opacity: 0.75">
+        </a-entity>
       </a-entity>
 
       <!-- Piso del mercado -->
@@ -32,7 +38,7 @@
     </a-scene>
 
     <script>
-      // Parámetros de diseño en inglés
+      // Layout parameters in English
       const NUM_AISLES    = 3;
       const AISLE_SPACING = 8;
       const AISLE_LENGTH  = 20;
@@ -40,9 +46,9 @@
       const SHELF_HEIGHTS = [1.0, 1.8, 2.6];
       const SHEET_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcDYcsgYBgMa6hvxzrh2dgaw9ane1kbjam1goRkV_9gRjXVERon5SUDmv1wZtS7ScFb4Ig_BMwu2yE/pub?output=tsv';
 
-      // Carga y parseo de la hoja
+      // Fetch and parse the sheet
       fetch(SHEET_URL)
-        .then(res => res.text())
+        .then(response => response.text())
         .then(text => {
           const lines   = text.trim().split('\n');
           const headers = lines[0].split('\t');
@@ -66,7 +72,7 @@
               marketEl.appendChild(shelfGroup);
 
               SHELF_HEIGHTS.forEach(shelfY => {
-                // Base de la repisa
+                // Shelf base
                 const shelf = document.createElement('a-box');
                 shelf.setAttribute('width',  AISLE_LENGTH);
                 shelf.setAttribute('height', 0.1);
@@ -75,7 +81,7 @@
                 shelf.setAttribute('color', '#CCCCCC');
                 shelfGroup.appendChild(shelf);
 
-                // Poblado de productos
+                // Populate shelf with products
                 products.forEach((prod, index) => {
                   const colsPerShelf = Math.floor(AISLE_LENGTH / ITEM_SPACING);
                   const zPos = (index % colsPerShelf) * ITEM_SPACING - (AISLE_LENGTH/2) + ITEM_SPACING/2;
@@ -100,7 +106,7 @@
             });
           }
 
-          // Listener de click para añadir al carrito
+          // Click listener for adding to cart
           document.querySelectorAll('.product').forEach(el => {
             el.addEventListener('click', e => {
               window.open(e.target.dataset.cartUrl, '_blank');
