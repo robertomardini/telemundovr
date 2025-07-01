@@ -5,30 +5,27 @@
     <title>Estadio VR con Scroll de Canal Enfocado</title>
     <meta
       name="description"
-      content="Escena VR con HLS en vivo, lista de canales scrollable dentro del entorno VR usando thumbstick solo al enfocar"
+      content="Escena VR con HLS en vivo, modelo 3D de fondo y lista de canales scrollable"
     />
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      html, body {
-        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+      html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden;}
+      .a-enter-vr-button, .a-fullscreen-button {
+        position: fixed!important;
+        bottom: env(safe-area-inset-bottom,20px)!important;
+        width:40px!important; height:40px!important; z-index:9999!important;
       }
-      .a-enter-vr-button,
-      .a-fullscreen-button {
-        position: fixed !important;
-        bottom: env(safe-area-inset-bottom,20px) !important;
-        width: 40px !important; height: 40px !important; z-index: 9999 !important;
-      }
-      .a-enter-vr-button { left: calc(50% - 30px) !important; }
-      .a-fullscreen-button { left: calc(50% + 10px) !important; }
+      .a-enter-vr-button { left: calc(50% - 30px)!important; }
+      .a-fullscreen-button { left: calc(50% + 10px)!important; }
     </style>
   </head>
   <body>
     <!-- Vídeo oculto para textura -->
     <video id="videoLive" playsinline webkit-playsinline crossorigin="anonymous" style="display:none"></video>
- 
+
     <a-scene vr-mode-ui="enabled: true">
       <!-- Assets: Environment + -->
       <a-assets>
@@ -42,8 +39,8 @@
         rotation="0 180 0"
         scale="3 3 3"
       ></a-entity>
-    <a-scene vr-mode-ui="enabled: true">
-      <!-- Rig -->
+
+      <!-- Rig: cámara y controladores VR -->
       <a-entity id="rig" position="0 1.6 0">
         <a-camera look-controls="pointerLockEnabled: false"></a-camera>
         <a-entity id="leftCtrl" laser-controls="hand: left" raycaster="objects: .interactive"></a-entity>
@@ -62,7 +59,7 @@
         position="0 5 -6"
       ></a-video>
 
-     <!-- Panel de controles 3D bajo la pantalla -->
+      <!-- Panel de controles 3D bajo la pantalla -->
       <a-entity position="0 1.5 -4">
         <a-plane width="4" height="0.6" color="#000" material="opacity:0.6"></a-plane>
         <a-entity
@@ -97,36 +94,29 @@
       </a-entity>
 
       <!-- Grid de canales (2 columnas × 3 filas) a la derecha -->
-      <a-entity position="7 5 -6">
-        <!-- Fondo semitransparente -->
+      <a-entity id="channelContainer" position="7 5 -6">
         <a-plane width="4" height="6" color="#000" material="opacity:0.6"></a-plane>
-
-        <!-- Flechas de scroll -->
         <a-entity
           id="btnScrollUp"
           class="interactive"
-          geometry="primitive: triangle; 
-                    vertexA:0 0.2 0; vertexB:-0.2 -0.2 0; vertexC:0.2 -0.2 0"
+          geometry="primitive: triangle; vertexA:0 0.2 0; vertexB:-0.2 -0.2 0; vertexC:0.2 -0.2 0"
           material="color:#FFF"
           position="0 2.8 0.01"
         ></a-entity>
         <a-entity
           id="btnScrollDown"
           class="interactive"
-          geometry="primitive: triangle; 
-                    vertexA:0 -0.2 0; vertexB:-0.2 0.2 0; vertexC:0.2 0.2 0"
+          geometry="primitive: triangle; vertexA:0 -0.2 0; vertexB:-0.2 0.2 0; vertexC:0.2 0.2 0"
           material="color:#FFF"
-          rotation="180 0 180"
+          rotation="180 0 0"
           position="0 -2.8 0.01"
         ></a-entity>
-
-        <!-- Contenedor de la cuadrícula -->
         <a-entity id="channelGrid" position="0 0.5 0.01"></a-entity>
       </a-entity>
     </a-scene>
 
     <script>
-      // --- HLS y canal por defecto ---
+      // HLS + canal por defecto
       const video = document.getElementById('videoLive');
       let hlsInstance;
       function setChannel(src) {
@@ -143,7 +133,7 @@
       }
       setChannel('https://live-hls-web-aje.getaj.net/AJE/index.m3u8');
 
-      // --- Datos desde CSV de Google Sheets ---
+      // Datos desde CSV de Google Sheets
       const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-V95W0rAxsZAHLKcbqEUftycPrkGPY7-2A_d7M6TP92Mx8w1pUzaP1SQHkMuEQJt6jzAwXtrPa31I/pub?output=csv';
       let channels = [], offset = 0;
       const cols = 2, rowsVisible = 3;
@@ -151,34 +141,26 @@
 
       function renderGrid() {
         grid.innerHTML = '';
-        const start = offset;
         for (let i = 0; i < cols * rowsVisible; i++) {
-          const item = channels[start + i];
+          const item = channels[offset + i];
           if (!item) break;
           const col = i % cols, row = Math.floor(i / cols);
-          const x = -1 + col * 2;       // columnas en -1 y +1
-          const y = 1.2 - row * 1.8;    // filas a 1.2, -0.6, -3.0
-
+          const x = -1 + col * 2;
+          const y = 1.2 - row * 1.8;
           const ent = document.createElement('a-entity');
           ent.setAttribute('position', `${x} ${y} 0`);
-
-          // fondo clicable
           const bg = document.createElement('a-plane');
-          bg.setAttribute('width', '1.8');
-          bg.setAttribute('height', '1.6');
-          bg.setAttribute('material', 'opacity:0;');
-          bg.setAttribute('class', 'interactive');
+          bg.setAttribute('width','1.8');
+          bg.setAttribute('height','1.6');
+          bg.setAttribute('material','opacity:0;');
+          bg.setAttribute('class','interactive');
           ent.appendChild(bg);
-
-          // icono arriba
           const icon = document.createElement('a-plane');
           icon.setAttribute('src', item.icon);
-          icon.setAttribute('width', '0.8');
-          icon.setAttribute('height', '0.8');
-          icon.setAttribute('position', '0 0.4 0.01');
+          icon.setAttribute('width','0.8');
+          icon.setAttribute('height','0.8');
+          icon.setAttribute('position','0 0.4 0.01');
           ent.appendChild(icon);
-
-          // texto abajo
           const txt = document.createElement('a-entity');
           txt.setAttribute('text', `
             value: ${item.name};
@@ -186,10 +168,9 @@
             width: 1.6;
             align: center;
           `);
-          txt.setAttribute('position', '0 -0.6 0.01');
+          txt.setAttribute('position','0 -0.6 0.01');
           ent.appendChild(txt);
-
-          bg.addEventListener('click', () => setChannel(item.src));
+          bg.addEventListener('click', ()=> setChannel(item.src));
           grid.appendChild(ent);
         }
       }
@@ -198,30 +179,25 @@
         .then(r=>r.text())
         .then(text=>{
           channels = text.trim().split('\n').slice(1)
-            .map(line=>{
-              const [icon,name,src]=line.split(',');
-              return { icon, name, src };
-            });
+            .map(line=>{ const [icon,name,src]=line.split(','); return {icon,name,src}; });
           renderGrid();
         });
 
-      // scroll con botones
-      document.getElementById('btnScrollUp')
-        .addEventListener('click', ()=>{
-          offset = Math.max(0, offset - cols);
-          renderGrid();
-        });
-      document.getElementById('btnScrollDown')
-        .addEventListener('click', ()=>{
-          offset = Math.min(channels.length - cols*rowsVisible, offset + cols);
-          renderGrid();
-        });
+      // Scroll botones
+      document.getElementById('btnScrollUp').addEventListener('click', ()=>{
+        offset = Math.max(0, offset - cols);
+        renderGrid();
+      });
+      document.getElementById('btnScrollDown').addEventListener('click', ()=>{
+        offset = Math.min(channels.length - cols*rowsVisible, offset + cols);
+        renderGrid();
+      });
 
-      // scroll con thumbstick cuando enfoques fondo
+      // Scroll thumbstick solo al enfocar fondo
       let focused = false;
-      document.querySelector('#channelPanelContainer a-plane')
+      document.querySelector('#channelContainer a-plane')
         .addEventListener('mouseenter', ()=> focused = true);
-      document.querySelector('#channelPanelContainer a-plane')
+      document.querySelector('#channelContainer a-plane')
         .addEventListener('mouseleave', ()=> focused = false);
 
       const DEAD = 0.5; let okScroll = true;
