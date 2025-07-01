@@ -2,44 +2,47 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>VR Market with A-Frame</title>
+    <title>VR Market with A-Frame and Movement Controls</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <!-- A-Frame Extras para movement-controls y otros componentes -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
     <a-scene>
-      <!-- Camera with cursor for VR interaction -->
-      <a-entity camera look-controls>
-        <a-cursor fuse="true" fuse-timeout="500"></a-cursor>
+      <!-- Rig para movimiento y controles VR -->
+      <a-entity id="cameraRig" position="0 1.6 0" movement-controls="speed: 0.1">
+        <!-- Cámara con look-controls y desplazamiento WASD -->
+        <a-entity camera look-controls wasd-controls></a-entity>
+
+        <!-- Cursor de fusión para gaze click en VR -->
+        <a-entity cursor="fuse: true; fuseTimeout: 500" position="0 0 -1"
+                  geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.02"
+                  material="color: white; shader: flat"></a-entity>
+
+        <!-- Laser controls para controladores VR -->
+        <a-entity laser-controls="hand: left" raycaster="objects: .product"></a-entity>
+        <a-entity laser-controls="hand: right" raycaster="objects: .product"></a-entity>
       </a-entity>
 
-      <!-- Floor -->
+      <!-- Piso del mercado -->
       <a-plane rotation="-90 0 0" width="30" height="30" color="#7BC8A4"></a-plane>
 
-      <!-- Container for all aisles -->
+      <!-- Contenedor de pasillos -->
       <a-entity id="market" position="-10 0 -10"></a-entity>
     </a-scene>
 
     <script>
-      // Layout parameters
-      const NUM_AISLES    = 3;    // number of aisles
-      const AISLE_SPACING = 8;    // space between aisles on X axis
-      const AISLE_LENGTH  = 20;   // length of each aisle on Z axis
-      const ITEM_SPACING  = 1.2;  // space between items on the shelf
+      // Parámetros de diseño en inglés
+      const NUM_AISLES    = 3;
+      const AISLE_SPACING = 8;
+      const AISLE_LENGTH  = 20;
+      const ITEM_SPACING  = 1.2;
+      const SHELF_HEIGHTS = [1.0, 1.8, 2.6];
+      const SHEET_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcDYcsgYBgMa6hvxzrh2dgaw9ane1kbjam1goRkV_9gRjXVERon5SUDmv1wZtS7ScFb4Ig_BMwu2yE/pub?output=tsv';
 
-      // Shelf heights (Y positions)
-      const SHELF_HEIGHTS = [
-        1.0,  // lower shelf
-        1.8,  // middle shelf
-        2.6   // upper shelf
-      ];
-
-      // URL of your Google Sheet published as TSV
-      const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcDYcsgYBgMa6hvxzrh2dgaw9ane1kbjam1goRkV_9gRjXVERon5SUDmv1wZtS7ScFb4Ig_BMwu2yE/pub?output=tsv';
-
-
-      // Fetch and parse the sheet into an array of product objects
+      // Carga y parseo de la hoja
       fetch(SHEET_URL)
-        .then(response => response.text())
+        .then(res => res.text())
         .then(text => {
           const lines   = text.trim().split('\n');
           const headers = lines[0].split('\t');
@@ -53,34 +56,31 @@
         .then(products => {
           const marketEl = document.getElementById('market');
 
-          // Generate each aisle
           for (let aisleIndex = 0; aisleIndex < NUM_AISLES; aisleIndex++) {
             const offsetX = aisleIndex * AISLE_SPACING;
 
             ['left', 'right'].forEach(side => {
-              const direction = side === 'left' ? -1 : 1;
+              const direction  = side === 'left' ? -1 : 1;
               const shelfGroup = document.createElement('a-entity');
               shelfGroup.setAttribute('position', `${offsetX} 0 ${-AISLE_LENGTH/2}`);
               marketEl.appendChild(shelfGroup);
 
-              // Create 3 shelves at different heights
               SHELF_HEIGHTS.forEach(shelfY => {
-                // Shelf base
+                // Base de la repisa
                 const shelf = document.createElement('a-box');
-                shelf.setAttribute('width', AISLE_LENGTH);
+                shelf.setAttribute('width',  AISLE_LENGTH);
                 shelf.setAttribute('height', 0.1);
-                shelf.setAttribute('depth', 0.5);
+                shelf.setAttribute('depth',  0.5);
                 shelf.setAttribute('position', `${direction * 2.5} ${shelfY} 0`);
                 shelf.setAttribute('color', '#CCCCCC');
                 shelfGroup.appendChild(shelf);
 
-                // Populate shelf with products
+                // Poblado de productos
                 products.forEach((prod, index) => {
-                  const columnsPerShelf = Math.floor(AISLE_LENGTH / ITEM_SPACING);
-                  const zPos = (index % columnsPerShelf) * ITEM_SPACING - (AISLE_LENGTH/2) + ITEM_SPACING/2;
+                  const colsPerShelf = Math.floor(AISLE_LENGTH / ITEM_SPACING);
+                  const zPos = (index % colsPerShelf) * ITEM_SPACING - (AISLE_LENGTH/2) + ITEM_SPACING/2;
                   const xPos = direction * 2.5;
 
-                  // Product image
                   const img = document.createElement('a-image');
                   img.setAttribute('src', prod.Image_URL);
                   img.setAttribute('width', '0.8');
@@ -90,7 +90,6 @@
                   img.dataset.cartUrl = prod.AddToCart_URL;
                   shelfGroup.appendChild(img);
 
-                  // Product title
                   const titleText = document.createElement('a-text');
                   titleText.setAttribute('value', prod.Title);
                   titleText.setAttribute('width', '2');
@@ -101,15 +100,14 @@
             });
           }
 
-          // Add click listener to all product images
+          // Listener de click para añadir al carrito
           document.querySelectorAll('.product').forEach(el => {
-            el.addEventListener('click', event => {
-              const cartUrl = event.target.dataset.cartUrl;
-              window.open(cartUrl, '_blank');
+            el.addEventListener('click', e => {
+              window.open(e.target.dataset.cartUrl, '_blank');
             });
           });
         })
-        .catch(error => console.error('Error loading products:', error));
+        .catch(err => console.error('Error loading products:', err));
     </script>
   </body>
 </html>
