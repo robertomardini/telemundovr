@@ -2,28 +2,32 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>VR Market with A-Frame and Basic Controls</title>
+    <title>VR Market with A-Frame and Gamepad Movement</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <!-- A-Frame Extras para gamepad y movement-controls -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     <style> body { margin: 0; overflow: hidden; } </style>
   </head>
   <body>
-    <a-scene>
-      <!-- Luces para que se vean los objetos -->
+    <a-scene vr-mode-ui="enterVRButton: true">
+      <!-- Iluminación básica -->
       <a-entity light="type: ambient; color: #BBB"></a-entity>
       <a-entity light="type: directional; intensity: 0.6" position="-1 1 0"></a-entity>
       <a-sky color="#ECECEC"></a-sky>
 
-      <!-- Cámara con controles WASD y look-controls -->
-      <a-entity id="cameraRig" position="0 1.6 0">
-        <a-camera wasd-controls look-controls>
-          <!-- Cursor de retícula para VR y desktop -->
+      <!-- Rig de cámara con movimiento por gamepad (joystick VR) y teclado -->
+      <a-entity id="cameraRig" position="0 1.6 0"
+                movement-controls="speed: 0.2; fly: true; controls: gamepad,keyboard"
+                look-controls>
+        <!-- Cámara y cursor para interacciones por mirada -->
+        <a-camera>
           <a-cursor fuse="true" fuseTimeout="500"
                     geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
                     material="color: white; shader: flat">
           </a-cursor>
         </a-camera>
 
-        <!-- Controladores VR con láser -->
+        <!-- Controladores VR con láser para seleccionar productos -->
         <a-entity laser-controls="hand: left" raycaster="objects: .product"
                   line="color: #118A7E; opacity: 0.75">
         </a-entity>
@@ -35,7 +39,7 @@
       <!-- Piso del mercado -->
       <a-plane rotation="-90 0 0" width="30" height="30" color="#7BC8A4"></a-plane>
 
-      <!-- Contenedor de pasillos (centrado a 0,0,-5) -->
+      <!-- Contenedor de pasillos -->
       <a-entity id="market" position="0 0 -5"></a-entity>
     </a-scene>
 
@@ -48,6 +52,7 @@
       const SHELF_HEIGHTS = [1.0, 1.8, 2.6];
       const SHEET_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcDYcsgYBgMa6hvxzrh2dgaw9ane1kbjam1goRkV_9gRjXVERon5SUDmv1wZtS7ScFb4Ig_BMwu2yE/pub?output=tsv';
 
+      // Carga y parseo de la hoja
       fetch(SHEET_URL)
         .then(res => res.text())
         .then(text => {
@@ -62,50 +67,54 @@
         })
         .then(products => {
           const market = document.getElementById('market');
-          for (let i=0; i<NUM_AISLES; i++) {
-            const offsetX = (i - (NUM_AISLES-1)/2) * AISLE_SPACING;
-            ['left','right'].forEach(side=>{
-              const dir = side==='left'? -1:1;
+          for (let i = 0; i < NUM_AISLES; i++) {
+            const offsetX = (i - (NUM_AISLES - 1) / 2) * AISLE_SPACING;
+            ['left', 'right'].forEach(side => {
+              const dir = side === 'left' ? -1 : 1;
               const shelfGroup = document.createElement('a-entity');
               shelfGroup.setAttribute('position', `${offsetX} 0 0`);
               market.appendChild(shelfGroup);
 
-              SHELF_HEIGHTS.forEach(shelfY=>{
+              SHELF_HEIGHTS.forEach(shelfY => {
+                // Base de la repisa
                 const shelf = document.createElement('a-box');
                 shelf.setAttribute('width', AISLE_LENGTH);
                 shelf.setAttribute('height', 0.1);
                 shelf.setAttribute('depth', 0.5);
-                shelf.setAttribute('position', `${dir*3} ${shelfY} 0`);
-                shelf.setAttribute('color','#CCCCCC');
+                shelf.setAttribute('position', `${dir * 3} ${shelfY} 0`);
+                shelf.setAttribute('color', '#CCCCCC');
                 shelfGroup.appendChild(shelf);
 
-                products.forEach((prod,j)=>{
-                  const colsPer = Math.floor(AISLE_LENGTH/ITEM_SPACING);
-                  const zPos = (j%colsPer)*ITEM_SPACING - AISLE_LENGTH/2 + ITEM_SPACING/2;
-                  const xPos = dir*3;
+                // Productos
+                products.forEach((prod, j) => {
+                  const colsPer = Math.floor(AISLE_LENGTH / ITEM_SPACING);
+                  const zPos = (j % colsPer) * ITEM_SPACING - AISLE_LENGTH / 2 + ITEM_SPACING / 2;
+                  const xPos = dir * 3;
+
                   const img = document.createElement('a-image');
-                  img.setAttribute('src',prod.Image_URL);
-                  img.setAttribute('width','0.8');
-                  img.setAttribute('height','0.8');
-                  img.setAttribute('position',`${xPos} ${shelfY+0.5} ${zPos}`);
-                  img.className='product';
+                  img.setAttribute('src', prod.Image_URL);
+                  img.setAttribute('width', '0.8');
+                  img.setAttribute('height', '0.8');
+                  img.setAttribute('position', `${xPos} ${shelfY + 0.5} ${zPos}`);
+                  img.className = 'product';
                   img.dataset.cartUrl = prod.AddToCart_URL;
                   shelfGroup.appendChild(img);
 
                   const title = document.createElement('a-text');
-                  title.setAttribute('value',prod.Title);
-                  title.setAttribute('width','1.5');
-                  title.setAttribute('position',`${xPos} ${shelfY-0.1} ${zPos}`);
+                  title.setAttribute('value', prod.Title);
+                  title.setAttribute('width', '1.5');
+                  title.setAttribute('position', `${xPos} ${shelfY - 0.1} ${zPos}`);
                   shelfGroup.appendChild(title);
                 });
               });
             });
           }
-          document.querySelectorAll('.product').forEach(el=>{
-            el.addEventListener('click',e=> window.open(e.target.dataset.cartUrl,'_blank'));
+          // Listener para añadir al carrito
+          document.querySelectorAll('.product').forEach(el => {
+            el.addEventListener('click', e => window.open(e.target.dataset.cartUrl, '_blank'));
           });
         })
-        .catch(err=>console.error(err));
+        .catch(err => console.error('Error loading products:', err));
     </script>
   </body>
 </html>
