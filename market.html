@@ -6,20 +6,25 @@
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <!-- A-Frame Extras para movement-controls -->
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+    <style> body { margin: 0; } </style>
   </head>
   <body>
-    <a-scene>
-      <!-- Rig para movimiento VR -->
-      <a-entity id="cameraRig" movement-controls="speed: 0.1">
-        <!-- Cámara con controls y cursor -->
-        <a-camera id="camera" wasd-controls look-controls position="0 1.6 0">
+    <a-scene vr-mode-ui="enterVRButton: true">
+      <!-- Rig para movimiento y rotación del usuario -->
+      <a-entity id="cameraRig"
+                position="0 1.6 0"
+                movement-controls="speed: 0.2; fly: true"
+                look-controls="pointerLockEnabled: true"
+                wasd-controls>
+        <!-- Cámara con cursor para interacciones por mirada -->
+        <a-camera id="camera">
           <a-cursor fuse="true" fuseTimeout="500"
                     geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
                     material="color: white; shader: flat">
           </a-cursor>
         </a-camera>
 
-        <!-- Controles de VR con modelo y rayo visible -->
+        <!-- Controladores VR con láser para seleccionar productos -->
         <a-entity laser-controls="hand: left; model: true"
                   raycaster="objects: .product"
                   line="color: #118A7E; opacity: 0.75">
@@ -62,6 +67,7 @@
         .then(products => {
           const marketEl = document.getElementById('market');
 
+          // Generate aisles
           for (let aisleIndex = 0; aisleIndex < NUM_AISLES; aisleIndex++) {
             const offsetX = aisleIndex * AISLE_SPACING;
 
@@ -71,6 +77,7 @@
               shelfGroup.setAttribute('position', `${offsetX} 0 ${-AISLE_LENGTH/2}`);
               marketEl.appendChild(shelfGroup);
 
+              // Create shelves and populate with products
               SHELF_HEIGHTS.forEach(shelfY => {
                 // Shelf base
                 const shelf = document.createElement('a-box');
@@ -81,12 +88,13 @@
                 shelf.setAttribute('color', '#CCCCCC');
                 shelfGroup.appendChild(shelf);
 
-                // Populate shelf with products
+                // Product items
                 products.forEach((prod, index) => {
                   const colsPerShelf = Math.floor(AISLE_LENGTH / ITEM_SPACING);
                   const zPos = (index % colsPerShelf) * ITEM_SPACING - (AISLE_LENGTH/2) + ITEM_SPACING/2;
                   const xPos = direction * 2.5;
 
+                  // Image
                   const img = document.createElement('a-image');
                   img.setAttribute('src', prod.Image_URL);
                   img.setAttribute('width', '0.8');
@@ -96,17 +104,18 @@
                   img.dataset.cartUrl = prod.AddToCart_URL;
                   shelfGroup.appendChild(img);
 
-                  const titleText = document.createElement('a-text');
-                  titleText.setAttribute('value', prod.Title);
-                  titleText.setAttribute('width', '2');
-                  titleText.setAttribute('position', `${xPos} ${shelfY - 0.1} ${zPos}`);
-                  shelfGroup.appendChild(titleText);
+                  // Title
+                  const title = document.createElement('a-text');
+                  title.setAttribute('value', prod.Title);
+                  title.setAttribute('width', '2');
+                  title.setAttribute('position', `${xPos} ${shelfY - 0.1} ${zPos}`);
+                  shelfGroup.appendChild(title);
                 });
               });
             });
           }
 
-          // Click listener for adding to cart
+          // Add click listener to products
           document.querySelectorAll('.product').forEach(el => {
             el.addEventListener('click', e => {
               window.open(e.target.dataset.cartUrl, '_blank');
