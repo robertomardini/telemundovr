@@ -2,35 +2,32 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>VR Market with A-Frame and Movement Controls</title>
+    <title>VR Market with A-Frame and Basic Controls</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- A-Frame Extras para movement-controls -->
-    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <style> body { margin: 0; } </style>
+    <style> body { margin: 0; overflow: hidden; } </style>
   </head>
   <body>
-    <a-scene vr-mode-ui="enterVRButton: true">
-      <!-- Rig para movimiento y rotación del usuario -->
-      <a-entity id="cameraRig"
-                position="0 1.6 0"
-                movement-controls="speed: 0.2; fly: true"
-                look-controls="pointerLockEnabled: true"
-                wasd-controls>
-        <!-- Cámara con cursor para interacciones por mirada -->
-        <a-camera id="camera">
+    <a-scene>
+      <!-- Luces para que se vean los objetos -->
+      <a-entity light="type: ambient; color: #BBB"></a-entity>
+      <a-entity light="type: directional; intensity: 0.6" position="-1 1 0"></a-entity>
+      <a-sky color="#ECECEC"></a-sky>
+
+      <!-- Cámara con controles WASD y look-controls -->
+      <a-entity id="cameraRig" position="0 1.6 0">
+        <a-camera wasd-controls look-controls>
+          <!-- Cursor de retícula para VR y desktop -->
           <a-cursor fuse="true" fuseTimeout="500"
                     geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
                     material="color: white; shader: flat">
           </a-cursor>
         </a-camera>
 
-        <!-- Controladores VR con láser para seleccionar productos -->
-        <a-entity laser-controls="hand: left; model: true"
-                  raycaster="objects: .product"
+        <!-- Controladores VR con láser -->
+        <a-entity laser-controls="hand: left" raycaster="objects: .product"
                   line="color: #118A7E; opacity: 0.75">
         </a-entity>
-        <a-entity laser-controls="hand: right; model: true"
-                  raycaster="objects: .product"
+        <a-entity laser-controls="hand: right" raycaster="objects: .product"
                   line="color: #118A7E; opacity: 0.75">
         </a-entity>
       </a-entity>
@@ -38,91 +35,77 @@
       <!-- Piso del mercado -->
       <a-plane rotation="-90 0 0" width="30" height="30" color="#7BC8A4"></a-plane>
 
-      <!-- Contenedor de pasillos -->
-      <a-entity id="market" position="-10 0 -10"></a-entity>
+      <!-- Contenedor de pasillos (centrado a 0,0,-5) -->
+      <a-entity id="market" position="0 0 -5"></a-entity>
     </a-scene>
 
     <script>
-      // Layout parameters in English
+      // Parámetros de disposición en inglés
       const NUM_AISLES    = 3;
-      const AISLE_SPACING = 8;
-      const AISLE_LENGTH  = 20;
-      const ITEM_SPACING  = 1.2;
+      const AISLE_SPACING = 4;
+      const AISLE_LENGTH  = 10;
+      const ITEM_SPACING  = 1;
       const SHELF_HEIGHTS = [1.0, 1.8, 2.6];
       const SHEET_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQcDYcsgYBgMa6hvxzrh2dgaw9ane1kbjam1goRkV_9gRjXVERon5SUDmv1wZtS7ScFb4Ig_BMwu2yE/pub?output=tsv';
 
-      // Fetch and parse the sheet
       fetch(SHEET_URL)
-        .then(response => response.text())
+        .then(res => res.text())
         .then(text => {
           const lines   = text.trim().split('\n');
           const headers = lines[0].split('\t');
           return lines.slice(1).map(line => {
             const cols = line.split('\t');
             const item = {};
-            headers.forEach((header, i) => item[header] = cols[i]);
+            headers.forEach((header,i) => item[header] = cols[i]);
             return item;
           });
         })
         .then(products => {
-          const marketEl = document.getElementById('market');
-
-          // Generate aisles
-          for (let aisleIndex = 0; aisleIndex < NUM_AISLES; aisleIndex++) {
-            const offsetX = aisleIndex * AISLE_SPACING;
-
-            ['left', 'right'].forEach(side => {
-              const direction  = side === 'left' ? -1 : 1;
+          const market = document.getElementById('market');
+          for (let i=0; i<NUM_AISLES; i++) {
+            const offsetX = (i - (NUM_AISLES-1)/2) * AISLE_SPACING;
+            ['left','right'].forEach(side=>{
+              const dir = side==='left'? -1:1;
               const shelfGroup = document.createElement('a-entity');
-              shelfGroup.setAttribute('position', `${offsetX} 0 ${-AISLE_LENGTH/2}`);
-              marketEl.appendChild(shelfGroup);
+              shelfGroup.setAttribute('position', `${offsetX} 0 0`);
+              market.appendChild(shelfGroup);
 
-              // Create shelves and populate with products
-              SHELF_HEIGHTS.forEach(shelfY => {
-                // Shelf base
+              SHELF_HEIGHTS.forEach(shelfY=>{
                 const shelf = document.createElement('a-box');
-                shelf.setAttribute('width',  AISLE_LENGTH);
+                shelf.setAttribute('width', AISLE_LENGTH);
                 shelf.setAttribute('height', 0.1);
-                shelf.setAttribute('depth',  0.5);
-                shelf.setAttribute('position', `${direction * 2.5} ${shelfY} 0`);
-                shelf.setAttribute('color', '#CCCCCC');
+                shelf.setAttribute('depth', 0.5);
+                shelf.setAttribute('position', `${dir*3} ${shelfY} 0`);
+                shelf.setAttribute('color','#CCCCCC');
                 shelfGroup.appendChild(shelf);
 
-                // Product items
-                products.forEach((prod, index) => {
-                  const colsPerShelf = Math.floor(AISLE_LENGTH / ITEM_SPACING);
-                  const zPos = (index % colsPerShelf) * ITEM_SPACING - (AISLE_LENGTH/2) + ITEM_SPACING/2;
-                  const xPos = direction * 2.5;
-
-                  // Image
+                products.forEach((prod,j)=>{
+                  const colsPer = Math.floor(AISLE_LENGTH/ITEM_SPACING);
+                  const zPos = (j%colsPer)*ITEM_SPACING - AISLE_LENGTH/2 + ITEM_SPACING/2;
+                  const xPos = dir*3;
                   const img = document.createElement('a-image');
-                  img.setAttribute('src', prod.Image_URL);
-                  img.setAttribute('width', '0.8');
-                  img.setAttribute('height', '0.8');
-                  img.setAttribute('position', `${xPos} ${shelfY + 0.5} ${zPos}`);
-                  img.className = 'product';
+                  img.setAttribute('src',prod.Image_URL);
+                  img.setAttribute('width','0.8');
+                  img.setAttribute('height','0.8');
+                  img.setAttribute('position',`${xPos} ${shelfY+0.5} ${zPos}`);
+                  img.className='product';
                   img.dataset.cartUrl = prod.AddToCart_URL;
                   shelfGroup.appendChild(img);
 
-                  // Title
                   const title = document.createElement('a-text');
-                  title.setAttribute('value', prod.Title);
-                  title.setAttribute('width', '2');
-                  title.setAttribute('position', `${xPos} ${shelfY - 0.1} ${zPos}`);
+                  title.setAttribute('value',prod.Title);
+                  title.setAttribute('width','1.5');
+                  title.setAttribute('position',`${xPos} ${shelfY-0.1} ${zPos}`);
                   shelfGroup.appendChild(title);
                 });
               });
             });
           }
-
-          // Add click listener to products
-          document.querySelectorAll('.product').forEach(el => {
-            el.addEventListener('click', e => {
-              window.open(e.target.dataset.cartUrl, '_blank');
-            });
+          document.querySelectorAll('.product').forEach(el=>{
+            el.addEventListener('click',e=> window.open(e.target.dataset.cartUrl,'_blank'));
           });
         })
-        .catch(err => console.error('Error loading products:', err));
+        .catch(err=>console.error(err));
     </script>
   </body>
 </html>
