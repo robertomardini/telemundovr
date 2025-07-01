@@ -28,7 +28,20 @@
   <body>
     <!-- Vídeo oculto para textura -->
     <video id="videoLive" playsinline webkit-playsinline crossorigin="anonymous" style="display:none"></video>
+ 
+    <a-scene vr-mode-ui="enabled: true">
+      <!-- Assets: Environment + -->
+      <a-assets>
+        <a-asset-item id="envModel" src="moes_simpsons.glb"></a-asset-item>
+      </a-assets>
 
+      <!-- Environment (fondo) -->
+      <a-entity
+        gltf-model="#envModel"
+        position="0 0 -10"
+        rotation="0 180 0"
+        scale="10 10 10"
+      ></a-entity>
     <a-scene vr-mode-ui="enabled: true">
       <!-- Rig -->
       <a-entity id="rig" position="0 1.6 4">
